@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.csdtb.database.mapper.UserLoginMapper">
+
+    <!-- 通用查询映射结果 -->
+    <resultMap id="BaseResultMap" type="com.csdtb.database.entity.UserLoginEntity">
+        <id column="id" property="id" />
+        <result column="account" property="account" />
+        <result column="password" property="password" />
+        <result column="username" property="username" />
+        <result column="age" property="age" />
+        <result column="sex" property="sex" />
+        <result column="control_unit" property="controlUnit" />
+        <result column="positional_title" property="positionalTitle" />
+        <result column="positional_job" property="positionalJob" />
+        <result column="role" property="role" />
+        <result column="is_delete" property="isDelete" />
+        <result column="create_time" property="createTime" />
+        <result column="update_time" property="updateTime" />
+    </resultMap>
+
+    <!-- 通用查询结果列 -->
+    <sql id="Base_Column_List">
+        id, account, password, username, age, sex, control_unit, positional_title, positional_job, role, is_delete, create_time, update_time
+    </sql>
+
+</mapper>

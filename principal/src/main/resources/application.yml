@@ -1,0 +1,11 @@
+spring:
+  jndi:
+    ignore: true
+  profiles:
+    active: dev
+server:
+  port: 8081
+
+# md5加密盐
+md5:
+  salt: csdtb
