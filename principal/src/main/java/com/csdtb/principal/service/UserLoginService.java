@@ -2,7 +2,11 @@ package com.csdtb.principal.service;
 
 import com.csdtb.common.ResponseResult;
 import com.csdtb.common.dto.user.AddUserDTO;
+import com.csdtb.common.dto.user.LoginDTO;
 import com.csdtb.common.dto.user.UpdateUserDTO;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 
 /**
  * <p>
@@ -26,10 +30,10 @@ public interface UserLoginService {
      * @param page
      * @param pageSize
      * @param username
-     * @param account
+     * @param controlUnit
      * @return
      */
-    ResponseResult selectUserByPage(Integer page, Integer pageSize, String username, Long account);
+    ResponseResult selectUserByPage(Integer page, Integer pageSize, String username, String controlUnit);
 
     /**
      * 修改用户信息
@@ -44,4 +48,18 @@ public interface UserLoginService {
      * @return
      */
     ResponseResult deleteUser(Long id);
+
+    /**
+     * 登录
+     * @param dto
+     * @return
+     */
+    ResponseResult toLogin(LoginDTO dto);
+
+    /**
+     * 退出登录
+     * @param request
+     * @return
+     */
+    ResponseResult loginOut(HttpServletRequest request);
 }

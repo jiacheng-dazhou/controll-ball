@@ -8,21 +8,34 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.csdtb.common.ResponseResult;
 import com.csdtb.common.constant.RegexType;
 import com.csdtb.common.dto.user.AddUserDTO;
+import com.csdtb.common.dto.user.LoginDTO;
 import com.csdtb.common.dto.user.UpdateUserDTO;
+import com.csdtb.common.dto.user.UserDTO;
 import com.csdtb.common.vo.PageData;
+import com.csdtb.common.vo.user.LoginVo;
 import com.csdtb.common.vo.user.UserPageVo;
+import com.csdtb.database.entity.MenuEntity;
+import com.csdtb.database.entity.RoleMenuEntity;
 import com.csdtb.database.entity.UserLoginEntity;
+import com.csdtb.database.mapper.MenuMapper;
+import com.csdtb.database.mapper.RoleMenuMapper;
 import com.csdtb.database.mapper.UserLoginMapper;
 import com.csdtb.principal.service.UserLoginService;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.util.CollectionUtils;
 import org.springframework.util.StringUtils;
 
 import javax.annotation.Resource;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 /**
  * <p>
@@ -39,6 +52,12 @@ public class UserLoginServiceImpl implements UserLoginService {
     private String salt;
     @Resource
     private UserLoginMapper userLoginMapper;
+    @Resource
+    private RedisTemplate redisTemplate;
+    @Resource
+    private MenuMapper menuMapper;
+    @Resource
+    private RoleMenuMapper roleMenuMapper;
 
     @Override
     public ResponseResult addUser(AddUserDTO dto) {
@@ -78,14 +97,14 @@ public class UserLoginServiceImpl implements UserLoginService {
     }
 
     @Override
-    public ResponseResult selectUserByPage(Integer page, Integer pageSize, String username, Long account) {
+    public ResponseResult selectUserByPage(Integer page, Integer pageSize, String username, String controlUnit) {
         //条件过滤
         LambdaQueryWrapper<UserLoginEntity> wrapper = new LambdaQueryWrapper<>();
         if (StringUtils.hasText(username)) {
             wrapper.like(UserLoginEntity::getUsername,username);
         }
-        if (account != null) {
-            wrapper.like(UserLoginEntity::getAccount,account);
+        if (StringUtils.hasText(controlUnit)) {
+            wrapper.like(UserLoginEntity::getAccount,controlUnit);
         }
 
         Page<UserLoginEntity> pageInfo = userLoginMapper.selectPage(new Page(page, pageSize), wrapper);
@@ -141,6 +160,72 @@ public class UserLoginServiceImpl implements UserLoginService {
             e.printStackTrace();
         }
 
+        return ResponseResult.success();
+    }
+
+    @Override
+    public ResponseResult toLogin(LoginDTO dto) {
+        //查询数据库中是否存在当前账户
+        UserLoginEntity userEntity = userLoginMapper.selectOne(new LambdaQueryWrapper<UserLoginEntity>()
+                .eq(UserLoginEntity::getAccount, dto.getAccount()));
+
+        if (userEntity == null) {
+            return ResponseResult.error("当前账户不存在");
+        }
+        //校验密码一致性
+        String dbPassword = userEntity.getPassword();
+
+        //密码加密
+        Digester md5 = new Digester(DigestAlgorithm.MD5);
+        String md5Password = md5.digestHex(dto.getPassword() + salt);
+
+        if (!dbPassword.equals(md5Password)) {
+            return ResponseResult.error("密码错误,请重新输入");
+        }
+
+        //生成token,将用户信息存入redis,2小时过期,如果进行操作则刷新token过期时间
+        String token = "Login_User:"+userEntity.getId();
+        md5.setSalt(salt.getBytes(StandardCharsets.UTF_8));
+        //因为要放在请求头部中，加一层密
+        String tokenMd5 = md5.digestHex(token);
+        UserDTO user = new UserDTO();
+        BeanUtils.copyProperties(userEntity,user);
+        redisTemplate.opsForValue().set(tokenMd5,user,2*60*1000, TimeUnit.SECONDS);
+
+        LoginVo loginVo = new LoginVo();
+        loginVo.setToken(tokenMd5);
+
+        //获取当前用户角色拥有的菜单
+        List<RoleMenuEntity> roleMenuList = roleMenuMapper.selectList(new LambdaQueryWrapper<RoleMenuEntity>()
+                .eq(RoleMenuEntity::getRole, userEntity.getRole()));
+
+        if (!CollectionUtils.isEmpty(roleMenuList)) {
+            List<MenuEntity> menuList = menuMapper.selectList(new LambdaQueryWrapper<MenuEntity>()
+                    .in(MenuEntity::getId, roleMenuList
+                            .stream()
+                            .map(RoleMenuEntity::getMenuId)
+                            .collect(Collectors.toList())));
+
+            List<LoginVo.MenuVo> menuVoList = new ArrayList<>(menuList.size());
+            menuList.forEach(item->{
+                menuVoList.add(LoginVo.MenuVo.builder()
+                        .id(item.getId())
+                        .title(item.getTitle())
+                        .path(item.getPath())
+                        .build());
+            });
+            loginVo.setMenuVoList(menuVoList);
+        }
+
+        return ResponseResult.success(loginVo);
+    }
+
+    @Override
+    public ResponseResult loginOut(HttpServletRequest request) {
+        String token = request.getHeader("Authorization");
+        if (StringUtils.hasText(token)) {
+            redisTemplate.delete(token);
+        }
         return ResponseResult.success();
     }
 

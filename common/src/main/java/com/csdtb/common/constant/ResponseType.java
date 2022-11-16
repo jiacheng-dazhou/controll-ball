@@ -16,9 +16,12 @@ public enum ResponseType {
 
     //公用模块
     SUCCESS(0,"成功"),
-    REQUEST_FAIL(-1, "失败");
+    REQUEST_FAIL(-1, "失败"),
+    REQUEST_FORBIDDEN(403,"还未登录，请登录！");
 
 
     private Integer code;
     private String message;
+
+
 }
