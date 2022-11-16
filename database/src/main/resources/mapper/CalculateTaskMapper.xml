@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.csdtb.database.mapper.CalculateTaskMapper">
+
+    <!-- 通用查询映射结果 -->
+    <resultMap id="BaseResultMap" type="com.csdtb.database.entity.CalculateTaskEntity">
+        <id column="id" property="id" />
+        <result column="level" property="level" />
+        <result column="calculate_level_1" property="calculateLevel1" />
+        <result column="calculate_level_2" property="calculateLevel2" />
+        <result column="calculate_level_3" property="calculateLevel3" />
+        <result column="create_time" property="createTime" />
+        <result column="update_time" property="updateTime" />
+    </resultMap>
+
+    <!-- 通用查询结果列 -->
+    <sql id="Base_Column_List">
+        id, level, calculate_level_1, calculate_level_2, calculate_level_3, create_time, update_time
+    </sql>
+    <update id="updateListById">
+        update tb_calculate_task
+        <trim prefix="set" suffixOverrides=",">
+            <trim prefix="calculate_level_1 = case" suffix="end,">
+                <foreach collection="list" item="item">
+                    <if test="item.calculateLevel1 != null">
+                        when id = #{item.id} then #{item.calculateLevel1}
+                    </if>
+                </foreach>
+            </trim>
+            <trim prefix="calculate_level_2 = case" suffix="end,">
+                <foreach collection="list" item="item">
+                    <if test="item.calculateLevel2 != null">
+                        when id = #{item.id} then #{item.calculateLevel2}
+                    </if>
+                </foreach>
+            </trim>
+            <trim prefix="calculate_level_3 = case" suffix="end,">
+                <foreach collection="list" item="item">
+                    <if test="item.calculateLevel3 != null">
+                        when id = #{item.id} then #{item.calculateLevel3}
+                    </if>
+                </foreach>
+            </trim>
+        </trim>
+        <where>
+            id in
+            <foreach collection="list" item="item" open="(" close=")" separator=",">
+                #{item.id}
+            </foreach>
+        </where>
+    </update>
+
+</mapper>

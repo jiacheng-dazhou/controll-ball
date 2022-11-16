@@ -29,37 +29,37 @@ public class UserLoginController {
     private UserLoginService userLoginService;
 
     @PostMapping("/addUser")
-    public ResponseResult addUser(@RequestBody AddUserDTO dto){
+    public ResponseResult addUser(@RequestBody AddUserDTO dto) {
         return userLoginService.addUser(dto);
     }
 
     @GetMapping("/selectUserByPage")
     public ResponseResult selectUserByPage(
-            @RequestParam(value = "page",defaultValue = "1",required = false)Integer page,
-            @RequestParam(value = "pageSize",defaultValue = "10",required = false)Integer pageSize,
-            @RequestParam(value = "username",required = false)String username,
-            @RequestParam(value = "controlUnit",required = false)String controlUnit
-    ){
-        return userLoginService.selectUserByPage(page,pageSize,username,controlUnit);
+            @RequestParam(value = "page", defaultValue = "1", required = false) Integer page,
+            @RequestParam(value = "pageSize", defaultValue = "10", required = false) Integer pageSize,
+            @RequestParam(value = "username", required = false) String username,
+            @RequestParam(value = "controlUnit", required = false) String controlUnit
+    ) {
+        return userLoginService.selectUserByPage(page, pageSize, username, controlUnit);
     }
 
     @PutMapping("/updateUser")
-    public ResponseResult updateUser(@RequestBody UpdateUserDTO dto){
+    public ResponseResult updateUser(@RequestBody UpdateUserDTO dto) {
         return userLoginService.updateUser(dto);
     }
 
     @DeleteMapping("/deleteUser/{id}")
-    public ResponseResult deleteUser(@PathVariable("id")Long id){
+    public ResponseResult deleteUser(@PathVariable("id") Long id) {
         return userLoginService.deleteUser(id);
     }
 
     @PostMapping("/toLogin")
-    public ResponseResult toLogin(@RequestBody LoginDTO dto){
+    public ResponseResult toLogin(@RequestBody LoginDTO dto) {
         return userLoginService.toLogin(dto);
     }
 
     @GetMapping("/loginOut")
-    public ResponseResult loginOut(HttpServletRequest request){
+    public ResponseResult loginOut(HttpServletRequest request) {
         return userLoginService.loginOut(request);
     }
 }

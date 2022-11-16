@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.csdtb.database.mapper.PrepareStageMapper">
+
+    <!-- 通用查询映射结果 -->
+    <resultMap id="BaseResultMap" type="com.csdtb.database.entity.PrepareStageEntity">
+        <id column="id" property="id" />
+        <result column="guiding_words" property="guidingWords" />
+        <result column="guiding_words_duration" property="guidingWordsDuration" />
+        <result column="simulate_exam_duration" property="simulateExamDuration" />
+        <result column="simulate_ball_number" property="simulateBallNumber" />
+        <result column="simulate_ball_speed" property="simulateBallSpeed" />
+        <result column="simulate_calculate_number" property="simulateCalculateNumber" />
+        <result column="simulate_calculate_level" property="simulateCalculateLevel" />
+        <result column="create_time" property="createTime" />
+        <result column="update_time" property="updateTime" />
+    </resultMap>
+
+    <!-- 通用查询结果列 -->
+    <sql id="Base_Column_List">
+        id, guiding_words, guiding_words_duration, simulate_exam_duration, simulate_ball_number, simulate_ball_speed, simulate_calculate_number, simulate_calculate_level, create_time, update_time
+    </sql>
+
+</mapper>

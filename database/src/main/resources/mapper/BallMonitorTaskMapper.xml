@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.csdtb.database.mapper.BallMonitorTaskMapper">
+
+    <!-- 通用查询映射结果 -->
+    <resultMap id="BaseResultMap" type="com.csdtb.database.entity.BallMonitorTaskEntity">
+        <id column="id" property="id" />
+        <result column="level" property="level" />
+        <result column="number" property="number" />
+        <result column="speed" property="speed" />
+        <result column="turnback_color" property="turnbackColor" />
+        <result column="turnback_rate" property="turnbackRate" />
+        <result column="bounds_color" property="boundsColor" />
+        <result column="bounds_rate" property="boundsRate" />
+        <result column="create_time" property="createTime" />
+        <result column="update_time" property="updateTime" />
+    </resultMap>
+
+    <!-- 通用查询结果列 -->
+    <sql id="Base_Column_List">
+        id, level, number, speed, turnback_color, turnback_rate, bounds_color, bounds_rate, create_time, update_time
+    </sql>
+    <update id="updateListById">
+        update tb_ball_monitor_task
+        <trim prefix="set" suffixOverrides=",">
+            <trim prefix="number = case" suffix="end,">
+                <foreach collection="list" item="item">
+                    <if test="item.number != null">
+                        when id = #{item.id} then #{item.number}
+                    </if>
+                </foreach>
+            </trim>
+            <trim prefix="speed = case" suffix="end,">
+                <foreach collection="list" item="item">
+                    <if test="item.speed != null">
+                        when id = #{item.id} then #{item.speed}
+                    </if>
+                </foreach>
+            </trim>
+            <trim prefix="turnback_color = case" suffix="end,">
+                <foreach collection="list" item="item">
+                    <if test="item.turnbackColor != null">
+                        when id = #{item.id} then #{item.turnbackColor}
+                    </if>
+                </foreach>
+            </trim>
+            <trim prefix="turnback_rate = case" suffix="end,">
+                <foreach collection="list" item="item">
+                    <if test="item.turnbackRate != null">
+                        when id = #{item.id} then #{item.turnbackRate}
+                    </if>
+                </foreach>
+            </trim>
+            <trim prefix="bounds_color = case" suffix="end,">
+                <foreach collection="list" item="item">
+                    <if test="item.boundsColor != null">
+                        when id = #{item.id} then #{item.boundsColor}
+                    </if>
+                </foreach>
+            </trim>
+            <trim prefix="bounds_rate = case" suffix="end,">
+                <foreach collection="list" item="item">
+                    <if test="item.boundsRate != null">
+                        when id = #{item.id} then #{item.boundsRate}
+                    </if>
+                </foreach>
+            </trim>
+        </trim>
+        <where>
+            id in
+            <foreach collection="list" item="item" separator="," open="(" close=")">
+                #{item.id}
+            </foreach>
+        </where>
+    </update>
+
+</mapper>

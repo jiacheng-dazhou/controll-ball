@@ -83,7 +83,7 @@ public class UserLoginServiceImpl implements UserLoginService {
 
         //新增用户
         UserLoginEntity entity = new UserLoginEntity();
-        BeanUtils.copyProperties(dto,entity);
+        BeanUtils.copyProperties(dto, entity);
         entity.setPassword(md5Password);
 
         try {
@@ -101,10 +101,10 @@ public class UserLoginServiceImpl implements UserLoginService {
         //条件过滤
         LambdaQueryWrapper<UserLoginEntity> wrapper = new LambdaQueryWrapper<>();
         if (StringUtils.hasText(username)) {
-            wrapper.like(UserLoginEntity::getUsername,username);
+            wrapper.like(UserLoginEntity::getUsername, username);
         }
         if (StringUtils.hasText(controlUnit)) {
-            wrapper.like(UserLoginEntity::getAccount,controlUnit);
+            wrapper.like(UserLoginEntity::getAccount, controlUnit);
         }
 
         Page<UserLoginEntity> pageInfo = userLoginMapper.selectPage(new Page(page, pageSize), wrapper);
@@ -114,7 +114,7 @@ public class UserLoginServiceImpl implements UserLoginService {
         }
 
         //组装数据
-        return ResponseResult.success(PageData.initPageVo(pageInfo,backVo(pageInfo.getRecords())));
+        return ResponseResult.success(PageData.initPageVo(pageInfo, backVo(pageInfo.getRecords())));
     }
 
     @Override
@@ -128,7 +128,7 @@ public class UserLoginServiceImpl implements UserLoginService {
         }
 
         UserLoginEntity entity = new UserLoginEntity();
-        BeanUtils.copyProperties(dto,entity);
+        BeanUtils.copyProperties(dto, entity);
         if (StringUtils.hasText(dto.getPassword())) {
             //校验密码格式
             if (!ReUtil.isMatch(RegexType.PASSWORD.getType(), dto.getPassword())) {
@@ -184,13 +184,13 @@ public class UserLoginServiceImpl implements UserLoginService {
         }
 
         //生成token,将用户信息存入redis,2小时过期,如果进行操作则刷新token过期时间
-        String token = "Login_User:"+userEntity.getId();
+        String token = "Login_User:" + userEntity.getId() + System.currentTimeMillis();
         md5.setSalt(salt.getBytes(StandardCharsets.UTF_8));
         //因为要放在请求头部中，加一层密
         String tokenMd5 = md5.digestHex(token);
         UserDTO user = new UserDTO();
-        BeanUtils.copyProperties(userEntity,user);
-        redisTemplate.opsForValue().set(tokenMd5,user,2*60*1000, TimeUnit.SECONDS);
+        BeanUtils.copyProperties(userEntity, user);
+        redisTemplate.opsForValue().set(tokenMd5, user, 2 * 60 * 1000, TimeUnit.SECONDS);
 
         LoginVo loginVo = new LoginVo();
         loginVo.setToken(tokenMd5);
@@ -208,7 +208,7 @@ public class UserLoginServiceImpl implements UserLoginService {
                             .collect(Collectors.toList())));
 
             List<LoginVo.MenuVo> menuVoList = new ArrayList<>(menuList.size());
-            menuList.forEach(item->{
+            menuList.forEach(item -> {
                 menuVoList.add(LoginVo.MenuVo.builder()
                         .id(item.getId())
                         .title(item.getTitle())
@@ -232,9 +232,9 @@ public class UserLoginServiceImpl implements UserLoginService {
 
     private List<UserPageVo> backVo(List<UserLoginEntity> entityList) {
         List<UserPageVo> voList = new ArrayList<>(entityList.size());
-        entityList.forEach(entity->{
+        entityList.forEach(entity -> {
             UserPageVo vo = new UserPageVo();
-            BeanUtils.copyProperties(entity,vo);
+            BeanUtils.copyProperties(entity, vo);
             voList.add(vo);
         });
         return voList;
