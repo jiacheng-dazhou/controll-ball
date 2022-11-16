@@ -1,5 +1,6 @@
 package com.csdtb.common.vo.user;
 
+import com.csdtb.common.dto.user.UserDTO;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -24,6 +25,11 @@ public class LoginVo {
      * 菜单信息
      */
     private List<MenuVo> menuVoList;
+
+    /**
+     * 用户信息
+     */
+    private UserDTO userVo;
 
     @Data
     @Builder

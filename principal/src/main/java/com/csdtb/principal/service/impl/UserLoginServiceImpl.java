@@ -194,6 +194,7 @@ public class UserLoginServiceImpl implements UserLoginService {
 
         LoginVo loginVo = new LoginVo();
         loginVo.setToken(tokenMd5);
+        loginVo.setUserVo(user);
 
         //获取当前用户角色拥有的菜单
         List<RoleMenuEntity> roleMenuList = roleMenuMapper.selectList(new LambdaQueryWrapper<RoleMenuEntity>()
