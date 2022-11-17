@@ -6,6 +6,7 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.util.Collection;
 import java.util.List;
 
 /**
@@ -26,7 +27,7 @@ public class PageData<T> {
     /**
      * 返回数据
      */
-    private List<T> list;
+    private Collection<T> list;
 
     @Data
     @Builder
@@ -49,7 +50,7 @@ public class PageData<T> {
         private long totalPage;
     }
 
-    public static PageData initPageVo(Page page, List list){
+    public static PageData initPageVo(Page page, Collection list){
         PageVo pageVo = PageVo.builder()
                 .page(page.getCurrent())
                 .pageSize(page.getSize())

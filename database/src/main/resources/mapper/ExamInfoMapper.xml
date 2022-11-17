@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.csdtb.database.mapper.ExamInfoMapper">
+
+    <!-- 通用查询映射结果 -->
+    <resultMap id="BaseResultMap" type="com.csdtb.database.entity.ExamInfoEntity">
+        <id column="id" property="id" />
+        <result column="name" property="name" />
+        <result column="start_time" property="startTime" />
+        <result column="end_time" property="endTime" />
+        <result column="monitor_level" property="monitorLevel" />
+        <result column="monitor_duration" property="monitorDuration" />
+        <result column="monitor_sleep_duration" property="monitorSleepDuration" />
+        <result column="calculate_level" property="calculateLevel" />
+        <result column="calculate_number" property="calculateNumber" />
+        <result column="calculate_rate" property="calculateRate" />
+        <result column="erp_start_time" property="erpStartTime" />
+        <result column="erp_end_time" property="erpEndTime" />
+        <result column="description" property="description" />
+        <result column="status" property="status" />
+        <result column="is_delete" property="isDelete" />
+        <result column="create_time" property="createTime" />
+        <result column="update_time" property="updateTime" />
+    </resultMap>
+
+    <!-- 通用查询结果列 -->
+    <sql id="Base_Column_List">
+        id, `name`, start_time, end_time, monitor_level, monitor_duration, monitor_sleep_duration, calculate_level, calculate_number, calculate_rate, erp_start_time, erp_end_time, description, status, is_delete, create_time, update_time
+    </sql>
+
+    <update id="updateStatusByIds">
+        update tb_exam_info
+        set `status` = #{status}
+        <where>
+            id in
+            <foreach collection="ids" item="id" separator="," open="(" close=")">
+                #{id}
+            </foreach>
+        </where>
+    </update>
+
+</mapper>
