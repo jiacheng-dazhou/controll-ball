@@ -110,6 +110,12 @@ public class ExamInfoEntity {
     private Integer status;
 
     /**
+     * 考试题库
+     */
+    @TableField("questions")
+    private String questions;
+
+    /**
      * 删除标志:1:删除，0：未删除
      */
     @TableField("is_delete")

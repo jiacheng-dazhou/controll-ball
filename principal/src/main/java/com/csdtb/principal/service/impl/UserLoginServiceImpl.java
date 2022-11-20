@@ -24,16 +24,16 @@ import com.csdtb.principal.service.UserLoginService;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.data.redis.core.script.DefaultRedisScript;
 import org.springframework.stereotype.Service;
 import org.springframework.util.CollectionUtils;
 import org.springframework.util.StringUtils;
 
 import javax.annotation.Resource;
 import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
@@ -184,16 +184,22 @@ public class UserLoginServiceImpl implements UserLoginService {
         }
 
         //生成token,将用户信息存入redis,2小时过期,如果进行操作则刷新token过期时间
-        String token = "Login_User:" + userEntity.getId() + System.currentTimeMillis();
-        md5.setSalt(salt.getBytes(StandardCharsets.UTF_8));
-        //因为要放在请求头部中，加一层密
-        String tokenMd5 = md5.digestHex(token);
+        String token = UUID.randomUUID().toString().replace("-","");
         UserDTO user = new UserDTO();
         BeanUtils.copyProperties(userEntity, user);
-        redisTemplate.opsForValue().set(tokenMd5, user, 2 * 60 * 1000, TimeUnit.SECONDS);
+        String userLoginKey = "Login_User:" + userEntity.getId();
+
+        //一个账户只能登录一次，因为后续考试需要保证同一时间同一个用户只在一个客户端开考
+        if (redisTemplate.hasKey(userLoginKey)) {
+            String oldToken = (String) redisTemplate.opsForValue().get(userLoginKey);
+            redisTemplate.delete(oldToken);
+        }
+
+        redisTemplate.opsForValue().set(userLoginKey,token,2 * 60 * 60, TimeUnit.SECONDS);
+        redisTemplate.opsForValue().set(token, user, 2 * 60 * 60, TimeUnit.SECONDS);
 
         LoginVo loginVo = new LoginVo();
-        loginVo.setToken(tokenMd5);
+        loginVo.setToken(token);
         loginVo.setUserVo(user);
 
         //获取当前用户角色拥有的菜单

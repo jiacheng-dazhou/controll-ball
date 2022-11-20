@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.csdtb.database.mapper.ExamRecordsDetailMapper">
+
+    <!-- 通用查询映射结果 -->
+    <resultMap id="BaseResultMap" type="com.csdtb.database.entity.ExamRecordsDetailEntity">
+        <id column="id" property="id" />
+        <result column="exam_records_id" property="examRecordsId" />
+        <result column="type" property="type" />
+        <result column="name" property="name" />
+        <result column="start_time" property="startTime" />
+        <result column="is_correct" property="isCorrect" />
+        <result column="reaction_time" property="reactionTime" />
+        <result column="judgment_efficiency" property="judgmentEfficiency" />
+        <result column="answer" property="answer" />
+        <result column="is_react_in_advance" property="isReactInAdvance" />
+    </resultMap>
+
+    <!-- 通用查询结果列 -->
+    <sql id="Base_Column_List">
+        id, exam_records_id, type, name, start_time, is_correct, reaction_time, judgment_efficiency, answer, is_react_in_advance
+    </sql>
+
+</mapper>

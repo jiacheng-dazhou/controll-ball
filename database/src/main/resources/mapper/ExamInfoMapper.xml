@@ -18,6 +18,7 @@
         <result column="erp_end_time" property="erpEndTime" />
         <result column="description" property="description" />
         <result column="status" property="status" />
+        <result column="questions" property="questions" />
         <result column="is_delete" property="isDelete" />
         <result column="create_time" property="createTime" />
         <result column="update_time" property="updateTime" />
@@ -25,7 +26,7 @@
 
     <!-- 通用查询结果列 -->
     <sql id="Base_Column_List">
-        id, `name`, start_time, end_time, monitor_level, monitor_duration, monitor_sleep_duration, calculate_level, calculate_number, calculate_rate, erp_start_time, erp_end_time, description, status, is_delete, create_time, update_time
+        id, `name`, start_time, end_time, monitor_level, monitor_duration, monitor_sleep_duration, calculate_level, calculate_number, calculate_rate, erp_start_time, erp_end_time, description, status, questions, is_delete, create_time, update_time
     </sql>
 
     <update id="updateStatusByIds">
@@ -35,6 +36,26 @@
             id in
             <foreach collection="ids" item="id" separator="," open="(" close=")">
                 #{id}
+            </foreach>
+        </where>
+    </update>
+
+    <update id="updateQuestionsByIds">
+        update tb_exam_info
+        set `status` = 2,
+        <trim suffixOverrides=",">
+            <trim prefix="questions = case" suffix="end,">
+                <foreach collection="examList" item="exam">
+                    <if test="exam.questions != null and exam.questions != ''">
+                        when id = #{exam.id} then #{exam.questions}
+                    </if>
+                </foreach>
+            </trim>
+        </trim>
+        <where>
+            id in
+            <foreach collection="examList" item="exam" separator="," open="(" close=")">
+                #{exam.id}
             </foreach>
         </where>
     </update>

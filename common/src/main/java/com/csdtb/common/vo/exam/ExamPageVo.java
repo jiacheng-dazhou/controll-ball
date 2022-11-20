@@ -59,4 +59,9 @@ public class ExamPageVo {
      * 考试状态(1-未开考，2-即将开始，3-进行中，4-已完成）
      */
     private Integer status;
+
+    /**
+     * 考试题库
+     */
+    private String questions;
 }

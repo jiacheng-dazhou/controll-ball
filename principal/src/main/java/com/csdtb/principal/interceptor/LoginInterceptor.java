@@ -1,6 +1,9 @@
 package com.csdtb.principal.interceptor;
 
+import cn.hutool.json.JSONUtil;
+import com.alibaba.fastjson.JSON;
 import com.csdtb.common.constant.ResponseType;
+import com.csdtb.common.dto.user.UserDTO;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Component;
 import org.springframework.web.servlet.HandlerInterceptor;
@@ -25,13 +28,19 @@ public class LoginInterceptor implements HandlerInterceptor {
     @Override
     public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) throws Exception {
         String token = request.getHeader("Authorization");
-        //没有登录用户token，重定向到登录页面
+        //token过期，拒绝访问
         if (token == null) {
             setResp(response);
             return false;
         }
+        UserDTO user = (UserDTO)redisTemplate.opsForValue().get(token);
+        if (user == null) {
+            setResp(response);
+            return false;
+        }
+        String userLoginKey = "Login_User:" + user.getId();
         //刷新token过期时间
-        if (!redisTemplate.expire(token, 2 * 60 * 1000, TimeUnit.SECONDS)) {
+        if (!(redisTemplate.expire(token, 2 * 60 * 60, TimeUnit.SECONDS) && redisTemplate.expire(userLoginKey,2 * 60 * 60, TimeUnit.SECONDS))) {
             setResp(response);
             return false;
         }

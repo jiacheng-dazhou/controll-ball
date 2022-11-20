@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.csdtb.database.mapper.ExamRecordsMapper">
+
+    <!-- 通用查询映射结果 -->
+    <resultMap id="BaseResultMap" type="com.csdtb.database.entity.ExamRecordsEntity">
+        <id column="id" property="id" />
+        <result column="exam_id" property="examId" />
+        <result column="user_id" property="userId" />
+    </resultMap>
+
+    <!-- 通用查询结果列 -->
+    <sql id="Base_Column_List">
+        id, exam_id, user_id
+    </sql>
+    <insert id="insertAndReturnId" useGeneratedKeys="true" keyProperty="id">
+        insert into tb_exam_records
+        (`exam_id`,`user_id`)
+        values
+        (#{entity.examId},#{entity.userId})
+    </insert>
+
+</mapper>

@@ -22,4 +22,10 @@ public interface ExamInfoMapper extends BaseMapper<ExamInfoEntity> {
      * @param status
      */
     void updateStatusByIds(@Param("ids") List<Integer> ids, Integer status);
+
+    /**
+     * 批量更新考试题库和状态
+     * @param examList
+     */
+    void updateQuestionsByIds(@Param("examList") List<ExamInfoEntity> examList);
 }
