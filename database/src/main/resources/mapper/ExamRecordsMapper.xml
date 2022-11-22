@@ -20,4 +20,23 @@
         (#{entity.examId},#{entity.userId})
     </insert>
 
+    <select id="selectPageByCondition" resultType="com.csdtb.database.entity.ExamRecordPageEntity">
+        select record.id,exam.name,exam.status,exam.start_time,user.username
+        from tb_exam_records record
+        left join tb_exam_info exam on exam.id = record.exam_id
+        left join tb_user_login user on user.id = record.user_id
+        <where>
+            <if test="userId != null">
+                user.id = #{userId}
+            </if>
+            <if test="examName != null and examName != ''">
+                and exam.name like concat('%',#{examName},'%')
+            </if>
+            <if test="userName != null and userName != ''">
+                and user.username like concat('%',#{userName},'%')
+            </if>
+        </where>
+
+    </select>
+
 </mapper>

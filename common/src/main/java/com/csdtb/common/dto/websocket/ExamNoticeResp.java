@@ -31,7 +31,7 @@ public class ExamNoticeResp {
     private Boolean isCorrect;
 
     /**
-     * 是否提前反应
+     * 是否提前反应(1-折返,2-出界,3-碰壁)
      */
     private Boolean isReactInAdvance;
 
@@ -46,7 +46,7 @@ public class ExamNoticeResp {
     private String judgmentEfficiency;
 
     /**
-     * 答案
+     * 答案(4-计算)
      */
     private String answer;
 }

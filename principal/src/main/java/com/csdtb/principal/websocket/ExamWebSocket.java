@@ -73,7 +73,7 @@ public class ExamWebSocket {
         UserDTO user = (UserDTO) redisTemplate.opsForValue().get(token);
 
         //只对管制员进行数据交互
-        if (!user.getRole().equals(UserEnum.CONTROLLER.getRole())) {
+        if (user == null || !user.getRole().equals(UserEnum.CONTROLLER.getRole())) {
             return;
         }
 
@@ -95,6 +95,9 @@ public class ExamWebSocket {
     public void onMessage(String message,@PathParam("token") String token) {
         //获取当前管制员考试信息
         ExamWebSocket examWebSocket = conns.get(token);
+        if (examWebSocket == null) {
+            return;
+        }
         ExamInfoEntity examInfoEntity = examWebSocket.examInfoEntity;
         UserDTO user = examWebSocket.user;
         //获取消息

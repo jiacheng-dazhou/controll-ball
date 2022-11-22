@@ -14,7 +14,12 @@ public enum ExamInfoEnum {
     NO_EXAMINATION(1,"未开考"),
     BEGIN_IN_A_MINUTE(2,"即将开始"),
     IN_PROGRESS(3,"进行中"),
-    COMPLETED(4,"已完成");
+    COMPLETED(4,"已完成"),
+
+    TURNBACK(1,"折返"),
+    BOUNDS(2,"出界"),
+    CRASH(3,"碰撞"),
+    CALCULATE(4,"计算");
 
     private Integer status;
     private String description;
