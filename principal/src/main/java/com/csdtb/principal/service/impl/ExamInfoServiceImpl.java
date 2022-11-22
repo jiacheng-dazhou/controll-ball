@@ -52,25 +52,20 @@ public class ExamInfoServiceImpl implements ExamInfoService {
         }
         //考试开考时间必须大于等于当前时间+5分钟以后，结束时间需大于开考时间
         String startTime = dto.getStartTime();
-        String endTime = dto.getEndTime();
         LocalDateTime now = LocalDateTime.now();
 
         LocalDateTime nowStartTime = now.plusMinutes(5L);
         LocalDateTime examStartTime = LocalDateTime.parse(startTime, DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
-        LocalDateTime examEndTime = LocalDateTime.parse(endTime, DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
+        LocalDateTime examEndTime = examStartTime.plusMinutes(dto.getExamDuration());
 
         if (nowStartTime.isAfter(examStartTime)) {
             return ResponseResult.error("开考时间需大于等于"+nowStartTime.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))+"以后");
         }
 
-        if (examStartTime.isAfter(examEndTime)) {
-            return ResponseResult.error("开考结束时间需大于开考开始时间");
-        }
-
         //新增
         ExamInfoEntity examInfoEntity = new ExamInfoEntity();
         BeanUtils.copyProperties(dto,examInfoEntity);
-
+        examInfoEntity.setEndTime(examEndTime.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")));
         try {
             examInfoMapper.insert(examInfoEntity);
         } catch (Exception e) {

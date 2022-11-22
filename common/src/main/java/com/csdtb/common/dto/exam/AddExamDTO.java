@@ -32,10 +32,10 @@ public class AddExamDTO {
     private String startTime;
 
     /**
-     * 考试结束时间（格式：yyyy-MM-dd HH:mm:ss)
+     * 考核时长（分钟表示）
      */
     @NotBlank
-    private String endTime;
+    private Long examDuration;
 
     /**
      * 监视任务难度（1-简单，2-一般，3-困难）
