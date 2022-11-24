@@ -1,36 +1,50 @@
 package com.csdtb.principal.service.impl;
 
+import cn.hutool.core.collection.CollUtil;
+import cn.hutool.core.io.IoUtil;
+import cn.hutool.poi.excel.ExcelUtil;
+import cn.hutool.poi.excel.ExcelWriter;
+import com.alibaba.fastjson.JSON;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.csdtb.common.ResponseResult;
 import com.csdtb.common.constant.ExamInfoEnum;
+import com.csdtb.common.constant.ExcelPatternEnum;
+import com.csdtb.common.constant.ResponseType;
 import com.csdtb.common.constant.UserEnum;
 import com.csdtb.common.dto.user.UserDTO;
 import com.csdtb.common.vo.PageData;
 import com.csdtb.common.vo.records.ExamRecordDetailVo;
 import com.csdtb.common.vo.records.ExamRecordsPageVo;
+import com.csdtb.common.vo.records.ExcelCalculateVo;
+import com.csdtb.common.vo.records.ExcelMonitorVo;
 import com.csdtb.database.entity.*;
 import com.csdtb.database.mapper.ExamInfoMapper;
 import com.csdtb.database.mapper.ExamRecordsDetailMapper;
 import com.csdtb.database.mapper.ExamRecordsMapper;
 import com.csdtb.database.mapper.UserLoginMapper;
 import com.csdtb.principal.service.ExamRecordsService;
+import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.collections4.list.TreeList;
 import org.springframework.beans.BeanUtils;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.util.CollectionUtils;
 
 import javax.annotation.Resource;
+import javax.servlet.ServletOutputStream;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import java.io.IOException;
+import java.io.UnsupportedEncodingException;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.net.URLEncoder;
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
-import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.stream.Collectors;
 
 /**
@@ -42,6 +56,7 @@ import java.util.stream.Collectors;
  * @since 2022-11-18
  */
 @Service
+@Slf4j
 public class ExamRecordsServiceImpl implements ExamRecordsService {
 
     @Resource
@@ -114,6 +129,185 @@ public class ExamRecordsServiceImpl implements ExamRecordsService {
         backCalculateInfo(examRecordDetailVo, examEntity, detailEntityList, user);
 
         return ResponseResult.success(examRecordDetailVo);
+    }
+
+    @Override
+    public void exportRecordDetail(Integer id, String token, HttpServletResponse response) {
+        //获取当前登录人信息
+        UserDTO user = (UserDTO) redisTemplate.opsForValue().get(token);
+        if (user == null) {
+            log.info("获取用户信息失败");
+            try {
+                response.getWriter().write(JSON.toJSONString(ResponseResult.error("导出失败，获取用户信息失败")));
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+            return;
+        }
+        if (user.getRole().equals(UserEnum.CONTROLLER.getRole())) {
+            log.info("管制员没有导出权限");
+            try {
+                response.getWriter().write(JSON.toJSONString(ResponseResult.error("导出失败，管制员没有导出权限")));
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+            return;
+        }
+
+        //获取导出数据
+        ResponseResult<ExamRecordDetailVo> result = selectRecordDetail(id, token);
+
+        if (!result.getCode().equals(ResponseType.SUCCESS.getCode())) {
+            try {
+                response.getWriter().write(JSON.toJSONString(ResponseResult.error("导出失败，获取考核详情失败")));
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+            return;
+        }
+
+        //获取考核名称
+        ExamRecordsEntity recordsEntity = examRecordsMapper.selectOne(new LambdaQueryWrapper<ExamRecordsEntity>()
+                .eq(ExamRecordsEntity::getId, id));
+        ExamInfoEntity examEntity = examInfoMapper.selectOne(new LambdaQueryWrapper<ExamInfoEntity>()
+                .eq(ExamInfoEntity::getId, recordsEntity.getExamId()));
+
+        ExamRecordDetailVo examRecordDetailVo = result.getData();
+        //组装导出数据
+        excelExport(examRecordDetailVo, response, examEntity.getName());
+    }
+
+    private void excelExport(ExamRecordDetailVo vo, HttpServletResponse response, String examName) {
+        ExcelWriter writer = ExcelUtil.getWriter(true);
+        //标题
+        writer.merge(8, String.format("%s_%s_考试记录", vo.getUsername(), examName));
+        writer.passCurrentRow();
+        //组装基本信息
+        packagingBaseInfo(writer, vo);
+        writer.passCurrentRow();
+        //设置列宽
+        for (int i = 0; i <= 6; i++) {
+            writer.setColumnWidth(i, 15);
+        }
+        //组装监控任务
+        packagingMonitorInfo(writer, vo);
+        writer.passCurrentRow();
+        //组装计算任务
+        packagingCalculateInfo(writer, vo);
+        writer.passCurrentRow();
+
+        //脑电任务后续补充
+
+        response.setContentType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet;charset=utf-8");
+        response.setHeader("Content-Disposition", String.format("attachment;filename=exam_records_%s.xlsx",System.currentTimeMillis()));
+        ServletOutputStream out = null;
+        try {
+            out = response.getOutputStream();
+        } catch (IOException e) {
+            e.printStackTrace();
+        } finally {
+            writer.flush(out, true);
+            writer.close();
+            IoUtil.close(out);
+        }
+    }
+
+    private void packagingCalculateInfo(ExcelWriter writer, ExamRecordDetailVo vo) {
+        //拼装监控任务
+        List<String> list = new TreeList<>();
+        ExamRecordDetailVo.CalculateVo calculateVo = vo.getCalculateVo();
+        list.add(calculateVo.getTitleCount() + "道");
+        list.add(calculateVo.getLevel().equals(1) ? "简单" : calculateVo.getLevel().equals(2) ? "一般" : "困难");
+        writer.merge(8, appendContent(list, ExcelPatternEnum.CALCULATE_INFO.getPattern()[0]), true);
+        writer.setRowHeight(writer.getCurrentRow() - 1, 25);
+
+        List<ExamRecordDetailVo.CalculateVo.CalculateDetailVo> detailVoList = calculateVo.getCalculateDetailVoList();
+        if (CollectionUtils.isEmpty(detailVoList)) {
+            return;
+        }
+
+        //详情数据
+        writer.writeRow(Arrays.asList(ExcelPatternEnum.CALCULATE_INFO.getPattern()[1].split(",")), true);
+        List<ExcelCalculateVo> excelCalculateVoList = new TreeList<>();
+        for (int i = 0; i < detailVoList.size(); i++) {
+            ExamRecordDetailVo.CalculateVo.CalculateDetailVo detailVo = detailVoList.get(i);
+            ExcelCalculateVo excelCalculateVo = new ExcelCalculateVo();
+            BeanUtils.copyProperties(detailVo, excelCalculateVo);
+            excelCalculateVo.setId(i + 1);
+            excelCalculateVo.setIsCorrect(detailVo.getIsCorrect().equals(Boolean.TRUE) ? "是" : "否");
+            excelCalculateVoList.add(excelCalculateVo);
+        }
+        writer.write(excelCalculateVoList);
+
+        //正确率
+        list.clear();
+        list.add(calculateVo.getCalculateRightRate());
+        writer.merge(8, appendContent(list, ExcelPatternEnum.CALCULATE_INFO.getPattern()[2]), true);
+    }
+
+    private void packagingMonitorInfo(ExcelWriter writer, ExamRecordDetailVo vo) {
+        //拼装监控任务
+        List<String> list = new TreeList<>();
+        ExamRecordDetailVo.MonitorVo monitorVo = vo.getMonitorVo();
+        list.add(monitorVo.getMonitorTime());
+        list.add(monitorVo.getLevel().equals(1) ? "简单" : monitorVo.getLevel().equals(2) ? "一般" : "困难");
+        list.add(monitorVo.getBoundsTotal() + "次");
+        list.add(monitorVo.getCrashTotal() + "次");
+        list.add(monitorVo.getTurnbackTotal() + "次");
+        writer.merge(8, appendContent(list, ExcelPatternEnum.MONITOR_INFO.getPattern()[0]), true);
+        writer.setRowHeight(writer.getCurrentRow() - 1, 25);
+
+        List<ExamRecordDetailVo.MonitorVo.MonitorDetailVo> detailVoList = monitorVo.getMonitorDetailVoList();
+        if (CollectionUtils.isEmpty(detailVoList)) {
+            return;
+        }
+
+        //详情数据
+        writer.writeRow(Arrays.asList(ExcelPatternEnum.MONITOR_INFO.getPattern()[1].split(",")), true);
+        List<ExcelMonitorVo> excelMonitorVoList = new TreeList<>();
+        for (int i = 0; i < detailVoList.size(); i++) {
+            ExamRecordDetailVo.MonitorVo.MonitorDetailVo detailVo = detailVoList.get(i);
+            ExcelMonitorVo excelMonitorVo = new ExcelMonitorVo();
+            BeanUtils.copyProperties(detailVo, excelMonitorVo);
+            excelMonitorVo.setId(i + 1);
+            excelMonitorVo.setIsCorrect(detailVo.getIsCorrect().equals(Boolean.TRUE) ? "是" : "否");
+            excelMonitorVo.setIsReactInAdvance(detailVo.getIsReactInAdvance().equals(Boolean.TRUE) ? "是" : "否");
+            excelMonitorVoList.add(excelMonitorVo);
+        }
+        writer.write(excelMonitorVoList);
+
+        //正确率
+        list.clear();
+        list.add(monitorVo.getBoundsRightRate());
+        list.add(monitorVo.getTurnbackRightRate());
+        list.add(monitorVo.getCrashRightRate());
+        writer.merge(8, appendContent(list, ExcelPatternEnum.MONITOR_INFO.getPattern()[2]), true);
+    }
+
+    private void packagingBaseInfo(ExcelWriter writer, ExamRecordDetailVo vo) {
+        writer.merge(1, "基本信息");
+        //拼装基本信息
+        List<String> list = new TreeList<>();
+        list.add(vo.getUsername());
+        list.add(String.valueOf(vo.getAge()));
+        list.add(vo.getSex().equals(Boolean.FALSE) ? "男" : "女");
+        list.add(vo.getControlUnit());
+        list.add(vo.getPositionalTitle());
+        list.add(vo.getPositionalJob());
+        writer.merge(8, appendContent(list, ExcelPatternEnum.USER_BASE_INFO.getPattern()[0]), false);
+        writer.setRowHeight(writer.getCurrentRow() - 1, 25);
+        list.clear();
+        list.add(vo.getStartTime());
+        list.add(vo.getTotalTime());
+        list.add(vo.getNowTime());
+        list.add(vo.getBreakNumber() + "次");
+        list.add(vo.getBreakTotalTime());
+        writer.merge(8, appendContent(list, ExcelPatternEnum.USER_BASE_INFO.getPattern()[1]), false);
+        writer.setRowHeight(writer.getCurrentRow() - 1, 25);
+    }
+
+    private String appendContent(List<String> list, String pattern) {
+        return String.format(pattern.replaceAll("%s", " %s    "), list.toArray());
     }
 
     private void backCalculateInfo(ExamRecordDetailVo vo, ExamInfoEntity examEntity, List<ExamRecordsDetailEntity> detailEntityList, UserDTO user) {
@@ -233,11 +427,11 @@ public class ExamRecordsServiceImpl implements ExamRecordsService {
         }
         //休息次数
         Duration duration = Duration.between(LocalTime.parse("00:00:00"), LocalTime.parse(vo.getNowTime()));
-        long breakNumber = duration.toMinutes() /
-                (examEntity.getMonitorDuration() + examEntity.getMonitorSleepDuration());
+        long breakNumber = duration.getSeconds() /
+                (examEntity.getMonitorDuration() * 60 + examEntity.getMonitorSleepDuration());
         vo.setBreakNumber((int) breakNumber);
         //休息总时长
-        Duration breakTime = Duration.ofMinutes(breakNumber * examEntity.getMonitorSleepDuration());
+        Duration breakTime = Duration.ofSeconds(breakNumber * examEntity.getMonitorSleepDuration());
         vo.setBreakTotalTime(toLocalTime(breakTime));
     }
 

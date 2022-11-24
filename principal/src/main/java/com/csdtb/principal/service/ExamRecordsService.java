@@ -2,6 +2,9 @@ package com.csdtb.principal.service;
 
 import com.csdtb.common.ResponseResult;
 
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+
 /**
  * <p>
  * 考试记录表 服务类
@@ -30,4 +33,13 @@ public interface ExamRecordsService {
      * @return
      */
     ResponseResult selectRecordDetail(Integer id,String token);
+
+    /**
+     * 导出考核记录详情
+     * @param id
+     * @param token
+     * @param response
+     * @return
+     */
+    void exportRecordDetail(Integer id, String token, HttpServletResponse response);
 }

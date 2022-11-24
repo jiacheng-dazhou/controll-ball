@@ -11,6 +11,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import javax.annotation.Resource;
 import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 
 /**
  * <p>
@@ -44,5 +45,11 @@ public class ExamRecordsController {
     public ResponseResult selectRecordDetail(@RequestParam("id")Integer id,HttpServletRequest request){
         String token = request.getHeader("Authorization");
         return examRecordsService.selectRecordDetail(id,token);
+    }
+
+    @GetMapping("/exportRecordDetail")
+    public void exportRecordDetail(@RequestParam("id")Integer id, HttpServletRequest request, HttpServletResponse response){
+        String token = request.getHeader("Authorization");
+        examRecordsService.exportRecordDetail(id,token,response);
     }
 }
