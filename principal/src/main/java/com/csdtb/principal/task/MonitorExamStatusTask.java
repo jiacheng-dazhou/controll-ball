@@ -16,13 +16,11 @@ import org.springframework.util.CollectionUtils;
 
 import javax.annotation.Resource;
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.NoSuchElementException;
+import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 
@@ -30,7 +28,7 @@ import java.util.stream.Collectors;
  * @Author zhoujiacheng
  * @Date 2022-11-17
  **/
-//@Component
+@Component
 @Slf4j
 public class MonitorExamStatusTask implements ApplicationRunner {
 
@@ -41,7 +39,7 @@ public class MonitorExamStatusTask implements ApplicationRunner {
     private CalculateTaskMapper calculateTaskMapper;
 
     @Override
-    public void run(ApplicationArguments args) throws Exception {
+    public void run(ApplicationArguments args) {
         //开启异步线程监控考核，修改考核状态(1-未开考，2-即将开始——开考前五分钟)，3-进行中——考试中，4-已完成——考试结束)
         CompletableFuture.runAsync(()->{
             while (true){
@@ -92,10 +90,7 @@ public class MonitorExamStatusTask implements ApplicationRunner {
             String endTime = exam.getEndTime();
             LocalDateTime examEndTime = LocalDateTime.parse(endTime, DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
             //考核结束时间小于当前时间，状态变更已完成
-            if (examEndTime.isBefore(now)) {
-                return true;
-            }
-            return false;
+            return examEndTime.isBefore(now);
         }).collect(Collectors.toList());
 
         if (!CollectionUtils.isEmpty(examStatusList)) {
@@ -115,10 +110,7 @@ public class MonitorExamStatusTask implements ApplicationRunner {
             String startTime = exam.getStartTime();
             LocalDateTime examStartTime = LocalDateTime.parse(startTime, DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
             //开考时间小于当前时间，变更状态为进行中
-            if (examStartTime.isBefore(now)) {
-                return true;
-            }
-            return false;
+            return examStartTime.isBefore(now);
         }).collect(Collectors.toList());
 
         if (!CollectionUtils.isEmpty(examStatusList)) {
@@ -138,10 +130,7 @@ public class MonitorExamStatusTask implements ApplicationRunner {
             String startTime = exam.getStartTime();
             LocalDateTime examStartTime = LocalDateTime.parse(startTime, DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
             //开考时间小于五分钟，变更状态为即将开考
-            if (examStartTime.isBefore(now.plusMinutes(5L))) {
-                return true;
-            }
-            return false;
+            return examStartTime.isBefore(now.plusMinutes(5L));
         }).collect(Collectors.toList());
 
         if (!CollectionUtils.isEmpty(examStatusList)) {
@@ -174,9 +163,8 @@ public class MonitorExamStatusTask implements ApplicationRunner {
             long endMill = endTime.toInstant(ZoneOffset.ofHours(8)).toEpochMilli();
             totalQuestions = (BigDecimal.valueOf(endMill)
                     .subtract(BigDecimal.valueOf(startMill)))
-                    .divide(BigDecimal.valueOf(1000L))
-                    .divide(BigDecimal.valueOf(examInfoEntity.getCalculateRate()))
-                    .setScale(0,BigDecimal.ROUND_UP)
+                    .divide(BigDecimal.valueOf(1000L),0,RoundingMode.HALF_UP)
+                    .divide(BigDecimal.valueOf(examInfoEntity.getCalculateRate()),0,RoundingMode.HALF_UP)
                     .intValue();
         } else {
             //默认给60道题
@@ -184,27 +172,19 @@ public class MonitorExamStatusTask implements ApplicationRunner {
         }
         //根据总题量，以及出题比例生成题库
         int easyQuestions = BigDecimal.valueOf(totalQuestions * calculateTaskEntity.getCalculateLevel1() * 0.01)
-                .setScale(0,BigDecimal.ROUND_UP).intValue();
+                .setScale(0,RoundingMode.HALF_UP).intValue();
         int generalQuestions = BigDecimal.valueOf(totalQuestions * calculateTaskEntity.getCalculateLevel2() * 0.01)
-                .setScale(0,BigDecimal.ROUND_UP).intValue();
+                .setScale(0,RoundingMode.HALF_UP).intValue();
         int difficultyQuestions = BigDecimal.valueOf(totalQuestions * calculateTaskEntity.getCalculateLevel3() * 0.01)
-                .setScale(0,BigDecimal.ROUND_UP).intValue();
+                .setScale(0,RoundingMode.HALF_UP).intValue();
 
-        List<String> questions = new ArrayList<>(easyQuestions + generalQuestions + difficultyQuestions);
+        Set<String> questions = new HashSet<>();
         questions.addAll(CalculationQuestionsEnum.getQuestionsByLevel(CalculationQuestionsEnum.EASY_LEVEL.getLevel(), easyQuestions));
         questions.addAll(CalculationQuestionsEnum.getQuestionsByLevel(CalculationQuestionsEnum.GENERAL_LEVEL.getLevel(), generalQuestions));
         questions.addAll(CalculationQuestionsEnum.getQuestionsByLevel(CalculationQuestionsEnum.DIFFICULTY_LEVEL.getLevel(), difficultyQuestions));
 
-        //打乱题库生成顺序
-        List<String> randomQuestions = new ArrayList<>(questions.size());
-        questions.parallelStream().forEach(question->{
-            randomQuestions.add(question);
-        });
-
         StringBuilder builder = new StringBuilder();
-        randomQuestions.forEach(question->{
-            builder.append(question + ",");
-        });
+        questions.forEach(question-> builder.append(question).append(","));
 
         return builder.substring(0, builder.lastIndexOf(","));
     }

@@ -1,69 +1,52 @@
-package com.csdtb.common.dto.exam;
+package com.csdtb.common.vo.exam;
 
-import lombok.AllArgsConstructor;
-import lombok.Builder;
 import lombok.Data;
-import lombok.NoArgsConstructor;
 
-import javax.validation.constraints.NotBlank;
-import javax.validation.constraints.NotNull;
 
 /**
  * @Author zhoujiacheng
- * @Date 2022-11-17
+ * @Date 2022-11-24
  **/
 @Data
-@AllArgsConstructor
-@NoArgsConstructor
-@Builder
-public class UpdateExamDTO {
-
+public class ExamDetailVo {
     /**
      * 主键id
      */
-    @NotNull
     private Integer id;
 
     /**
      * 考核名称
      */
-    @NotBlank
     private String name;
 
     /**
      * 考试开始时间（格式：yyyy-MM-dd HH:mm:ss)
      */
-    @NotBlank
     private String startTime;
 
     /**
      * 考核时长（分钟表示）
      */
-    @NotBlank
     private Long examDuration;
 
     /**
      * 监视任务难度（1-简单，2-一般，3-困难）
      */
-    @NotNull
     private Integer monitorLevel;
 
     /**
      * 监视任务时长（分钟）
      */
-    @NotNull
     private Integer monitorDuration;
 
     /**
      * 监视休息时长（分钟）
      */
-    @NotNull
     private Integer monitorSleepDuration;
 
     /**
      * 计算任务难度（1-简单，2-一般，3-困难）
      */
-    @NotNull
     private Integer calculateLevel;
 
     /**
@@ -90,4 +73,14 @@ public class UpdateExamDTO {
      * 考核说明
      */
     private String description;
+
+    /**
+     * 考试状态(1-未开考，2-即将开始，3-进行中，4-已完成）
+     */
+    private Integer status;
+
+    /**
+     * 考试题库
+     */
+    private String questions;
 }

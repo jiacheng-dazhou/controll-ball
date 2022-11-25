@@ -7,6 +7,7 @@ import com.csdtb.common.constant.ExamInfoEnum;
 import com.csdtb.common.dto.exam.AddExamDTO;
 import com.csdtb.common.dto.exam.UpdateExamDTO;
 import com.csdtb.common.vo.PageData;
+import com.csdtb.common.vo.exam.ExamDetailVo;
 import com.csdtb.common.vo.exam.ExamGuidelinesVo;
 import com.csdtb.common.vo.exam.ExamPageVo;
 import com.csdtb.database.entity.ExamInfoEntity;
@@ -20,6 +21,7 @@ import org.springframework.util.CollectionUtils;
 import org.springframework.util.StringUtils;
 
 import javax.annotation.Resource;
+import java.time.Duration;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
@@ -108,7 +110,7 @@ public class ExamInfoServiceImpl implements ExamInfoService {
 
         LocalDateTime nowStartTime = now.plusMinutes(5L);
         LocalDateTime examStartTime = LocalDateTime.parse(dto.getStartTime(), DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
-        LocalDateTime examEndTime = LocalDateTime.parse(dto.getEndTime(), DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
+        LocalDateTime examEndTime = examStartTime.plusMinutes(dto.getExamDuration());
 
         if (nowStartTime.isAfter(examStartTime)) {
             return ResponseResult.error("开考时间需大于等于"+nowStartTime.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))+"以后");
@@ -132,6 +134,7 @@ public class ExamInfoServiceImpl implements ExamInfoService {
 
         ExamInfoEntity entity = new ExamInfoEntity();
         BeanUtils.copyProperties(dto,entity);
+        entity.setEndTime(examEndTime.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")));
         try {
             examInfoMapper.updateById(entity);
         } catch (Exception e) {
@@ -166,6 +169,25 @@ public class ExamInfoServiceImpl implements ExamInfoService {
         PrepareStageEntity entity = prepareStageList.get(0);
         ExamGuidelinesVo vo = new ExamGuidelinesVo();
         BeanUtils.copyProperties(entity,vo);
+
+        return ResponseResult.success(vo);
+    }
+
+    @Override
+    public ResponseResult selectExamDetail(String id) {
+        ExamInfoEntity examInfoEntity = examInfoMapper.selectOne(new LambdaQueryWrapper<ExamInfoEntity>()
+                .eq(ExamInfoEntity::getId, id));
+
+        if (examInfoEntity == null) {
+            return ResponseResult.error("暂未获取到当前考核详情");
+        }
+
+        ExamDetailVo vo = new ExamDetailVo();
+        BeanUtils.copyProperties(examInfoEntity,vo);
+        LocalDateTime startTime = LocalDateTime.parse(examInfoEntity.getStartTime(),DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
+        LocalDateTime endTime = LocalDateTime.parse(examInfoEntity.getEndTime(),DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
+        Duration duration = Duration.between(startTime, endTime);
+        vo.setExamDuration(duration.toMinutes());
 
         return ResponseResult.success(vo);
     }

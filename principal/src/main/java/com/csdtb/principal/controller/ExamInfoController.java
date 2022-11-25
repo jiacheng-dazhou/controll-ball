@@ -54,4 +54,9 @@ public class ExamInfoController {
     public ResponseResult guidelines(){
         return examInfoService.guidelines();
     }
+
+    @GetMapping("/selectExamDetail")
+    public ResponseResult selectExamDetail(@RequestParam(value = "id") String id){
+        return examInfoService.selectExamDetail(id);
+    }
 }

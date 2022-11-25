@@ -1,6 +1,7 @@
 package com.csdtb.principal.service.impl;
 
 import cn.hutool.core.collection.CollUtil;
+import cn.hutool.core.date.DateTime;
 import cn.hutool.core.io.IoUtil;
 import cn.hutool.poi.excel.ExcelUtil;
 import cn.hutool.poi.excel.ExcelWriter;
@@ -199,7 +200,7 @@ public class ExamRecordsServiceImpl implements ExamRecordsService {
         //脑电任务后续补充
 
         response.setContentType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet;charset=utf-8");
-        response.setHeader("Content-Disposition", String.format("attachment;filename=exam_records_%s.xlsx",System.currentTimeMillis()));
+        response.setHeader("Content-Disposition", String.format("attachment;filename=exam_records_%s.xlsx", System.currentTimeMillis()));
         ServletOutputStream out = null;
         try {
             out = response.getOutputStream();
@@ -366,28 +367,46 @@ public class ExamRecordsServiceImpl implements ExamRecordsService {
             List<ExamRecordsDetailEntity> crashList = detailListMap.get(ExamInfoEnum.CRASH.getStatus());
 
             //监控统计
-            monitorVo.setTurnbackTotal(turnbackList.size());
-            monitorVo.setBoundsTotal(boundsList.size());
-            monitorVo.setCrashTotal(crashList.size());
+            monitorVo.setCrashTotal(CollectionUtils.isEmpty(crashList) ? 0 : crashList.size());
 
-            long turnBackRight = turnbackList.stream()
-                    .filter(item -> item.getIsCorrect().equals(Boolean.TRUE))
-                    .count();
-            monitorVo.setTurnbackRightRate(CollectionUtils.isEmpty(turnbackList) ?
-                    "0.00%" : BigDecimal.valueOf(turnBackRight * 100 / turnbackList.size())
-                    .setScale(2, RoundingMode.HALF_UP) + "%");
-            long boundsRight = boundsList.stream()
-                    .filter(item -> item.getIsCorrect().equals(Boolean.TRUE))
-                    .count();
-            monitorVo.setBoundsRightRate(CollectionUtils.isEmpty(boundsList) ?
-                    "0.00%" : BigDecimal.valueOf(boundsRight * 100 / boundsList.size())
-                    .setScale(2, RoundingMode.HALF_UP) + "%");
-            long crashRight = crashList.stream()
-                    .filter(item -> item.getIsCorrect().equals(Boolean.TRUE))
-                    .count();
-            monitorVo.setCrashRightRate(CollectionUtils.isEmpty(crashList) ?
-                    "0.00%" : BigDecimal.valueOf(crashRight * 100 / crashList.size())
-                    .setScale(2, RoundingMode.HALF_UP) + "%");
+            if (CollectionUtils.isEmpty(turnbackList)) {
+                monitorVo.setTurnbackTotal(0);
+                monitorVo.setTurnbackRightRate("0.00%");
+            } else {
+                monitorVo.setTurnbackTotal(turnbackList.size());
+                long turnBackRight = turnbackList.stream()
+                        .filter(item -> item.getIsCorrect().equals(Boolean.TRUE))
+                        .count();
+                monitorVo.setTurnbackRightRate(CollectionUtils.isEmpty(turnbackList) ?
+                        "0.00%" : BigDecimal.valueOf(turnBackRight * 100 / turnbackList.size())
+                        .setScale(2, RoundingMode.HALF_UP) + "%");
+            }
+
+            if (CollectionUtils.isEmpty(boundsList)) {
+                monitorVo.setBoundsTotal(0);
+                monitorVo.setBoundsRightRate("0.00%");
+            } else {
+                monitorVo.setBoundsTotal(boundsList.size());
+                long boundsRight = boundsList.stream()
+                        .filter(item -> item.getIsCorrect().equals(Boolean.TRUE))
+                        .count();
+                monitorVo.setBoundsRightRate(CollectionUtils.isEmpty(boundsList) ?
+                        "0.00%" : BigDecimal.valueOf(boundsRight * 100 / boundsList.size())
+                        .setScale(2, RoundingMode.HALF_UP) + "%");
+            }
+
+            if (CollectionUtils.isEmpty(crashList)) {
+                monitorVo.setCrashTotal(0);
+                monitorVo.setCrashRightRate("0.00%");
+            } else {
+                monitorVo.setCrashTotal(crashList.size());
+                long crashRight = crashList.stream()
+                        .filter(item -> item.getIsCorrect().equals(Boolean.TRUE))
+                        .count();
+                monitorVo.setCrashRightRate(CollectionUtils.isEmpty(crashList) ?
+                        "0.00%" : BigDecimal.valueOf(crashRight * 100 / crashList.size())
+                        .setScale(2, RoundingMode.HALF_UP) + "%");
+            }
 
             //管制员不看详情
             if (user.getRole().equals(UserEnum.CONTROLLER.getRole())) {
@@ -420,7 +439,8 @@ public class ExamRecordsServiceImpl implements ExamRecordsService {
         //考核时长
         if (examEntity.getStatus().equals(ExamInfoEnum.IN_PROGRESS.getStatus())) {
             //考试进行中
-            vo.setNowTime(toLocalTime(examEntity.getStartTime(), LocalDateTime.now().toString()));
+            String endTime = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
+            vo.setNowTime(toLocalTime(examEntity.getStartTime(), endTime));
         } else {
             //考试结束
             vo.setNowTime(vo.getTotalTime());
@@ -446,6 +466,9 @@ public class ExamRecordsServiceImpl implements ExamRecordsService {
         LocalDateTime examStartTime = LocalDateTime.parse(startTime, DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
         LocalDateTime examEndTime = LocalDateTime.parse(endTime, DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
         Duration duration = Duration.between(examStartTime, examEndTime);
+        if (duration.toHours() >= 24) {
+            return "02:00:00";
+        }
         int hours = (int) duration.toHours();
         int minute = (int) (duration.toMinutes() - duration.toHours() * 60);
         int seconds = (int) (duration.getSeconds() - duration.toMinutes() * 60);

@@ -50,4 +50,11 @@ public interface ExamInfoService {
      * @return
      */
     ResponseResult guidelines();
+
+    /**
+     * 查询考试详情
+     * @param id
+     * @return
+     */
+    ResponseResult selectExamDetail(String id);
 }
