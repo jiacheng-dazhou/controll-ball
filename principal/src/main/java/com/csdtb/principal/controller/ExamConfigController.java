@@ -6,6 +6,7 @@ import com.csdtb.common.dto.examconfig.EditMonitorTaskDTO;
 import com.csdtb.common.dto.examconfig.EditPrepareStageDTO;
 import com.csdtb.principal.service.ExamConfigService;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 import javax.annotation.Resource;
@@ -38,7 +39,7 @@ public class ExamConfigController {
     }
 
     @PostMapping("/editPrepareStage")
-    public ResponseResult editPrepareStage(@RequestBody EditPrepareStageDTO dto) {
+    public ResponseResult editPrepareStage(@RequestBody @Validated EditPrepareStageDTO dto) {
         return examConfigService.editPrepareStage(dto);
     }
 

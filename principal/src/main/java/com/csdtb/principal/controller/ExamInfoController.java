@@ -5,6 +5,7 @@ import com.csdtb.common.dto.exam.AddExamDTO;
 import com.csdtb.common.dto.exam.UpdateExamDTO;
 import com.csdtb.principal.service.ExamInfoService;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 import javax.annotation.Resource;
@@ -26,7 +27,7 @@ public class ExamInfoController {
     private ExamInfoService examInfoService;
 
     @PostMapping("/addExam")
-    public ResponseResult addExam(@RequestBody AddExamDTO dto){
+    public ResponseResult addExam(@RequestBody @Validated AddExamDTO dto){
         return examInfoService.addExam(dto);
     }
 
@@ -41,7 +42,7 @@ public class ExamInfoController {
     }
 
     @PutMapping("/updateExam")
-    public ResponseResult updateExam(UpdateExamDTO dto){
+    public ResponseResult updateExam(@RequestBody @Validated UpdateExamDTO dto){
         return examInfoService.updateExam(dto);
     }
 

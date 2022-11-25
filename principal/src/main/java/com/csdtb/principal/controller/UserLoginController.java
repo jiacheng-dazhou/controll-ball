@@ -6,6 +6,7 @@ import com.csdtb.common.dto.user.LoginDTO;
 import com.csdtb.common.dto.user.UpdateUserDTO;
 import com.csdtb.principal.service.UserLoginService;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 import javax.annotation.Resource;
@@ -28,7 +29,7 @@ public class UserLoginController {
     private UserLoginService userLoginService;
 
     @PostMapping("/addUser")
-    public ResponseResult addUser(@RequestBody AddUserDTO dto) {
+    public ResponseResult addUser(@RequestBody @Validated AddUserDTO dto) {
         return userLoginService.addUser(dto);
     }
 
@@ -43,7 +44,7 @@ public class UserLoginController {
     }
 
     @PutMapping("/updateUser")
-    public ResponseResult updateUser(@RequestBody UpdateUserDTO dto) {
+    public ResponseResult updateUser(@RequestBody @Validated UpdateUserDTO dto) {
         return userLoginService.updateUser(dto);
     }
 
@@ -53,7 +54,7 @@ public class UserLoginController {
     }
 
     @PostMapping("/toLogin")
-    public ResponseResult toLogin(@RequestBody LoginDTO dto) {
+    public ResponseResult toLogin(@RequestBody @Validated LoginDTO dto) {
         return userLoginService.toLogin(dto);
     }
 
