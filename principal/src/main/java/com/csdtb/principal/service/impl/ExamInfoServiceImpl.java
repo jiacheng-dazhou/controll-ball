@@ -10,8 +10,12 @@ import com.csdtb.common.vo.PageData;
 import com.csdtb.common.vo.exam.ExamDetailVo;
 import com.csdtb.common.vo.exam.ExamGuidelinesVo;
 import com.csdtb.common.vo.exam.ExamPageVo;
+import com.csdtb.database.entity.BallMonitorTaskEntity;
+import com.csdtb.database.entity.CalculateTaskEntity;
 import com.csdtb.database.entity.ExamInfoEntity;
 import com.csdtb.database.entity.PrepareStageEntity;
+import com.csdtb.database.mapper.BallMonitorTaskMapper;
+import com.csdtb.database.mapper.CalculateTaskMapper;
 import com.csdtb.database.mapper.ExamInfoMapper;
 import com.csdtb.database.mapper.PrepareStageMapper;
 import com.csdtb.principal.exception.GlobalException;
@@ -47,6 +51,9 @@ public class ExamInfoServiceImpl implements ExamInfoService {
 
     @Resource
     private PrepareStageMapper prepareStageMapper;
+
+    @Resource
+    private BallMonitorTaskMapper ballMonitorTaskMapper;
 
     @Override
     public ResponseResult addExam(AddExamDTO dto) {
@@ -189,6 +196,16 @@ public class ExamInfoServiceImpl implements ExamInfoService {
         LocalDateTime endTime = LocalDateTime.parse(examInfoEntity.getEndTime(),DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
         Duration duration = Duration.between(startTime, endTime);
         vo.setExamDuration(duration.toMinutes());
+
+        //查询监控任务
+        BallMonitorTaskEntity monitorTaskEntity = ballMonitorTaskMapper.selectOne(new LambdaQueryWrapper<BallMonitorTaskEntity>()
+                .eq(BallMonitorTaskEntity::getLevel,vo.getMonitorLevel()));
+
+        if (monitorTaskEntity != null) {
+            ExamDetailVo.BallMonitorTaskVo monitorTaskVo = new ExamDetailVo.BallMonitorTaskVo();
+            BeanUtils.copyProperties(monitorTaskEntity,monitorTaskVo);
+            vo.setBallMonitorTaskVo(monitorTaskVo);
+        }
 
         return ResponseResult.success(vo);
     }
