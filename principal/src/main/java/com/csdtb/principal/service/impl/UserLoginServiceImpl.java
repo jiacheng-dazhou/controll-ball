@@ -20,6 +20,7 @@ import com.csdtb.database.entity.UserLoginEntity;
 import com.csdtb.database.mapper.MenuMapper;
 import com.csdtb.database.mapper.RoleMenuMapper;
 import com.csdtb.database.mapper.UserLoginMapper;
+import com.csdtb.principal.exception.GlobalException;
 import com.csdtb.principal.service.UserLoginService;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Value;
@@ -61,20 +62,12 @@ public class UserLoginServiceImpl implements UserLoginService {
 
     @Override
     public ResponseResult addUser(AddUserDTO dto) {
-        //校验账户、密码格式
-        if (!checkAccount(dto.getAccount())) {
-            return ResponseResult.error("请校验手机号格式");
-        }
-
-        if (!ReUtil.isMatch(RegexType.PASSWORD.getType(), dto.getPassword())) {
-            return ResponseResult.error("请校验密码格式");
-        }
 
         //校验账户唯一性
         UserLoginEntity userEntity = userLoginMapper.selectOne(new LambdaQueryWrapper<UserLoginEntity>()
                 .eq(UserLoginEntity::getAccount, dto.getAccount()));
         if (userEntity != null) {
-            return ResponseResult.error("当前手机号已注册");
+            throw new GlobalException(ResponseResult.error("当前手机号已注册"));
         }
 
         //密码加密
@@ -90,7 +83,7 @@ public class UserLoginServiceImpl implements UserLoginService {
             userLoginMapper.insert(entity);
         } catch (Exception e) {
             e.printStackTrace();
-            return ResponseResult.error("系统异常,新增用户失败");
+            throw new GlobalException(ResponseResult.error("系统异常,新增用户失败"));
         }
 
         return ResponseResult.success();
@@ -124,16 +117,12 @@ public class UserLoginServiceImpl implements UserLoginService {
         UserLoginEntity user = userLoginMapper.selectOne(new LambdaQueryWrapper<UserLoginEntity>()
                 .eq(UserLoginEntity::getId, dto.getId()));
         if (user == null) {
-            return ResponseResult.error("当前用户不存在");
+            throw new GlobalException(ResponseResult.error("当前用户不存在"));
         }
 
         UserLoginEntity entity = new UserLoginEntity();
         BeanUtils.copyProperties(dto, entity);
         if (StringUtils.hasText(dto.getPassword())) {
-            //校验密码格式
-            if (!ReUtil.isMatch(RegexType.PASSWORD.getType(), dto.getPassword())) {
-                return ResponseResult.error("请校验密码格式");
-            }
 
             //密码加密
             Digester md5 = new Digester(DigestAlgorithm.MD5);
@@ -145,7 +134,7 @@ public class UserLoginServiceImpl implements UserLoginService {
             userLoginMapper.updateById(entity);
         } catch (Exception e) {
             e.printStackTrace();
-            return ResponseResult.error("修改用户信息失败");
+            throw new GlobalException(ResponseResult.error("修改用户信息失败"));
         }
 
         return ResponseResult.success();
@@ -170,7 +159,7 @@ public class UserLoginServiceImpl implements UserLoginService {
                 .eq(UserLoginEntity::getAccount, dto.getAccount()));
 
         if (userEntity == null) {
-            return ResponseResult.error("当前账户不存在");
+            throw new GlobalException(ResponseResult.error("当前账户不存在"));
         }
         //校验密码一致性
         String dbPassword = userEntity.getPassword();
@@ -180,7 +169,7 @@ public class UserLoginServiceImpl implements UserLoginService {
         String md5Password = md5.digestHex(dto.getPassword() + salt);
 
         if (!dbPassword.equals(md5Password)) {
-            return ResponseResult.error("密码错误,请重新输入");
+            throw new GlobalException( ResponseResult.error("密码错误,请重新输入"));
         }
 
         //生成token,将用户信息存入redis,2小时过期,如果进行操作则刷新token过期时间
@@ -244,14 +233,5 @@ public class UserLoginServiceImpl implements UserLoginService {
             voList.add(vo);
         });
         return voList;
-    }
-
-    private boolean checkAccount(Long account) {
-        String accountStr = String.valueOf(account);
-        boolean flag1 = ReUtil.isMatch(RegexType.TELECOM.getType(), accountStr);
-        boolean flag2 = ReUtil.isMatch(RegexType.UNICOM.getType(), accountStr);
-        boolean flag3 = ReUtil.isMatch(RegexType.MOBILE.getType(), accountStr);
-
-        return flag1 || flag2 || flag3;
     }
 }

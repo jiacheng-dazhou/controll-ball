@@ -1,7 +1,6 @@
 package com.csdtb.principal.service.impl;
 
-import cn.hutool.core.collection.CollUtil;
-import cn.hutool.core.date.DateTime;
+
 import cn.hutool.core.io.IoUtil;
 import cn.hutool.poi.excel.ExcelUtil;
 import cn.hutool.poi.excel.ExcelWriter;
@@ -24,6 +23,7 @@ import com.csdtb.database.mapper.ExamInfoMapper;
 import com.csdtb.database.mapper.ExamRecordsDetailMapper;
 import com.csdtb.database.mapper.ExamRecordsMapper;
 import com.csdtb.database.mapper.UserLoginMapper;
+import com.csdtb.principal.exception.GlobalException;
 import com.csdtb.principal.service.ExamRecordsService;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.list.TreeList;
@@ -34,13 +34,10 @@ import org.springframework.util.CollectionUtils;
 
 import javax.annotation.Resource;
 import javax.servlet.ServletOutputStream;
-import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
-import java.io.UnsupportedEncodingException;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
-import java.net.URLEncoder;
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
@@ -101,20 +98,20 @@ public class ExamRecordsServiceImpl implements ExamRecordsService {
                 .eq(ExamRecordsEntity::getId, id));
 
         if (recordsEntity == null) {
-            return ResponseResult.error("暂未查询到当前考核记录");
+            throw new GlobalException(ResponseResult.error("暂未查询到当前考核记录"));
         }
 
         //获取考试记录信息
         ExamInfoEntity examEntity = examInfoMapper.selectOne(new LambdaQueryWrapper<ExamInfoEntity>()
                 .eq(ExamInfoEntity::getId, recordsEntity.getExamId()));
         if (examEntity == null) {
-            return ResponseResult.error("暂未查询到当前考核信息");
+            throw new GlobalException(ResponseResult.error("暂未查询到当前考核信息"));
         }
         //获取用户信息
         UserLoginEntity userEntity = userLoginMapper.selectOne(new LambdaQueryWrapper<UserLoginEntity>()
                 .eq(UserLoginEntity::getId, recordsEntity.getUserId()));
         if (userEntity == null) {
-            return ResponseResult.error("暂未查询到当前考生信息");
+            throw new GlobalException(ResponseResult.error("暂未查询到当前考生信息"));
         }
         //获取考核记录信息
         List<ExamRecordsDetailEntity> detailEntityList = examRecordsDetailMapper.selectList(new LambdaQueryWrapper<ExamRecordsDetailEntity>()

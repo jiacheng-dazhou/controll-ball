@@ -1,5 +1,6 @@
 package com.csdtb.common.dto.user;
 
+import com.csdtb.common.annotation.IsPassword;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -22,6 +23,7 @@ public class UpdateUserDTO {
     /**
      * 密码
      */
+    @IsPassword(required = false)
     private String password;
 
     /**

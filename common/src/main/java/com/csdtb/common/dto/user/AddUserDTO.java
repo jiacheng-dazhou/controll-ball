@@ -1,5 +1,7 @@
 package com.csdtb.common.dto.user;
 
+import com.csdtb.common.annotation.IsPassword;
+import com.csdtb.common.annotation.IsPhone;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -19,12 +21,14 @@ public class AddUserDTO {
      * 账户id(唯一)
      */
     @NotNull
+    @IsPhone
     private Long account;
 
     /**
      * 密码
      */
     @NotBlank
+    @IsPassword
     private String password;
 
     /**

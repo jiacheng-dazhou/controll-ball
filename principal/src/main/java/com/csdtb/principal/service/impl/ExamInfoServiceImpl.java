@@ -14,6 +14,7 @@ import com.csdtb.database.entity.ExamInfoEntity;
 import com.csdtb.database.entity.PrepareStageEntity;
 import com.csdtb.database.mapper.ExamInfoMapper;
 import com.csdtb.database.mapper.PrepareStageMapper;
+import com.csdtb.principal.exception.GlobalException;
 import com.csdtb.principal.service.ExamInfoService;
 import org.springframework.beans.BeanUtils;
 import org.springframework.stereotype.Service;
@@ -50,7 +51,7 @@ public class ExamInfoServiceImpl implements ExamInfoService {
     @Override
     public ResponseResult addExam(AddExamDTO dto) {
         if (dto.getCalculateNumber() == null && dto.getCalculateRate() == null) {
-            return ResponseResult.error("计算固定数量、固定频率必须包含其中至少一个");
+            throw new GlobalException(ResponseResult.error("计算固定数量、固定频率必须包含其中至少一个"));
         }
         //考试开考时间必须大于等于当前时间+5分钟以后，结束时间需大于开考时间
         String startTime = dto.getStartTime();
@@ -61,7 +62,7 @@ public class ExamInfoServiceImpl implements ExamInfoService {
         LocalDateTime examEndTime = examStartTime.plusMinutes(dto.getExamDuration());
 
         if (nowStartTime.isAfter(examStartTime)) {
-            return ResponseResult.error("开考时间需大于等于"+nowStartTime.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))+"以后");
+            throw new GlobalException(ResponseResult.error("开考时间需大于等于"+nowStartTime.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))+"以后"));
         }
 
         //新增
@@ -72,7 +73,7 @@ public class ExamInfoServiceImpl implements ExamInfoService {
             examInfoMapper.insert(examInfoEntity);
         } catch (Exception e) {
             e.printStackTrace();
-            return ResponseResult.error("新增考试异常");
+            throw new GlobalException(ResponseResult.error("新增考试异常"));
         }
 
         return ResponseResult.success();
@@ -113,11 +114,11 @@ public class ExamInfoServiceImpl implements ExamInfoService {
         LocalDateTime examEndTime = examStartTime.plusMinutes(dto.getExamDuration());
 
         if (nowStartTime.isAfter(examStartTime)) {
-            return ResponseResult.error("开考时间需大于等于"+nowStartTime.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))+"以后");
+            throw new GlobalException(ResponseResult.error("开考时间需大于等于"+nowStartTime.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))+"以后"));
         }
 
         if (examStartTime.isAfter(examEndTime)) {
-            return ResponseResult.error("开考结束时间需大于开考开始时间");
+            throw new GlobalException(ResponseResult.error("开考结束时间需大于开考开始时间"));
         }
 
         //如果当前修改的考试状态已经变更，则不能再修改
@@ -125,11 +126,11 @@ public class ExamInfoServiceImpl implements ExamInfoService {
                 .eq(ExamInfoEntity::getId, dto.getId()));
 
         if (examInfoEntity == null) {
-            return ResponseResult.error("考核已删除");
+            throw new GlobalException(ResponseResult.error("考核已删除"));
         }
 
         if (examInfoEntity.getStatus() != ExamInfoEnum.NO_EXAMINATION.getStatus()) {
-            return ResponseResult.error("考核即将开始或已经进行或已完成，已不能修改");
+            throw new GlobalException(ResponseResult.error("考核即将开始或已经进行或已完成，已不能修改"));
         }
 
         ExamInfoEntity entity = new ExamInfoEntity();
@@ -139,7 +140,7 @@ public class ExamInfoServiceImpl implements ExamInfoService {
             examInfoMapper.updateById(entity);
         } catch (Exception e) {
             e.printStackTrace();
-            return ResponseResult.error("修改考核异常");
+            throw new GlobalException(ResponseResult.error("修改考核异常"));
         }
 
         return ResponseResult.success();
@@ -152,7 +153,7 @@ public class ExamInfoServiceImpl implements ExamInfoService {
             examInfoMapper.deleteById(id);
         } catch (Exception e) {
             e.printStackTrace();
-            return ResponseResult.error("删除考核异常");
+            throw new GlobalException(ResponseResult.error("删除考核异常"));
         }
 
         return ResponseResult.success();
@@ -179,7 +180,7 @@ public class ExamInfoServiceImpl implements ExamInfoService {
                 .eq(ExamInfoEntity::getId, id));
 
         if (examInfoEntity == null) {
-            return ResponseResult.error("暂未获取到当前考核详情");
+            throw new GlobalException(ResponseResult.error("暂未获取到当前考核详情"));
         }
 
         ExamDetailVo vo = new ExamDetailVo();

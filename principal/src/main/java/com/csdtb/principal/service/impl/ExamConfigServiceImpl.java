@@ -12,6 +12,7 @@ import com.csdtb.database.entity.PrepareStageEntity;
 import com.csdtb.database.mapper.BallMonitorTaskMapper;
 import com.csdtb.database.mapper.CalculateTaskMapper;
 import com.csdtb.database.mapper.PrepareStageMapper;
+import com.csdtb.principal.exception.GlobalException;
 import com.csdtb.principal.service.ExamConfigService;
 import org.springframework.beans.BeanUtils;
 import org.springframework.stereotype.Service;
@@ -63,7 +64,7 @@ public class ExamConfigServiceImpl implements ExamConfigService {
         } catch (Exception e) {
             e.printStackTrace();
             TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
-            return ResponseResult.error("更新失败");
+            throw new GlobalException(ResponseResult.error("更新失败"));
         }
         return ResponseResult.success();
     }
@@ -87,7 +88,7 @@ public class ExamConfigServiceImpl implements ExamConfigService {
         } catch (Exception e) {
             e.printStackTrace();
             TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
-            return ResponseResult.error("更新失败");
+            throw new GlobalException(ResponseResult.error("更新失败"));
         }
         return ResponseResult.success();
     }
@@ -100,7 +101,7 @@ public class ExamConfigServiceImpl implements ExamConfigService {
             prepareStageMapper.updateById(entity);
         } catch (Exception e) {
             e.printStackTrace();
-            return ResponseResult.error("更新失败");
+            throw new GlobalException(ResponseResult.error("更新失败"));
         }
         return ResponseResult.success();
     }
