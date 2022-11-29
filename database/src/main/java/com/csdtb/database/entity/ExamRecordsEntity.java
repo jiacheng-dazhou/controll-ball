@@ -1,14 +1,12 @@
 package com.csdtb.database.entity;
 
-import com.baomidou.mybatisplus.annotation.TableName;
 import com.baomidou.mybatisplus.annotation.IdType;
-import com.baomidou.mybatisplus.extension.activerecord.Model;
-import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableField;
-import java.io.Serializable;
+import com.baomidou.mybatisplus.annotation.TableId;
+import com.baomidou.mybatisplus.annotation.TableName;
+import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import lombok.AllArgsConstructor;
 
 /**
  * <p>
@@ -42,5 +40,9 @@ public class ExamRecordsEntity {
     @TableField("user_id")
     private Integer userId;
 
-
+    /**
+     * 视频路径
+     */
+    @TableField("video_path")
+    private String videoPath;
 }

@@ -31,6 +31,7 @@ import org.springframework.beans.BeanUtils;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.util.CollectionUtils;
+import org.springframework.util.StringUtils;
 
 import javax.annotation.Resource;
 import javax.servlet.ServletOutputStream;
@@ -334,9 +335,10 @@ public class ExamRecordsServiceImpl implements ExamRecordsService {
         }
 
         List<ExamRecordDetailVo.CalculateVo.CalculateDetailVo> calculateDetailVoList = new ArrayList<>(calculateList.size());
-        calculateList.parallelStream().forEach(entity -> {
+        calculateList.forEach(entity -> {
             ExamRecordDetailVo.CalculateVo.CalculateDetailVo detailVo = new ExamRecordDetailVo.CalculateVo.CalculateDetailVo();
             BeanUtils.copyProperties(entity, detailVo);
+            detailVo.setJudgmentEfficiency(entity.getIsCorrect() ? setJudgmentEfficiency(entity.getReactionTime(),calculateRight) : "-");
             calculateDetailVoList.add(detailVo);
         });
 
@@ -346,6 +348,13 @@ public class ExamRecordsServiceImpl implements ExamRecordsService {
                 .collect(Collectors.toList()));
 
         vo.setCalculateVo(calculateVo);
+    }
+
+    private String setJudgmentEfficiency(String reactionTime, long calculateRight) {
+        reactionTime = reactionTime.replace("s", "");
+
+        return BigDecimal.valueOf(Double.valueOf(reactionTime))
+                .divide(BigDecimal.valueOf(calculateRight), 2, RoundingMode.HALF_UP) + "%";
     }
 
     private void backMonitorInfo(ExamRecordDetailVo vo, ExamInfoEntity examEntity, List<ExamRecordsDetailEntity> detailEntityList, UserDTO user) {
@@ -413,9 +422,10 @@ public class ExamRecordsServiceImpl implements ExamRecordsService {
 
             List<ExamRecordsDetailEntity> monitorDetailList = detailEntityList.stream().filter(item -> !item.getType().equals(ExamInfoEnum.CALCULATE.getStatus())).collect(Collectors.toList());
             List<ExamRecordDetailVo.MonitorVo.MonitorDetailVo> detailVoList = new ArrayList<>(monitorDetailList.size());
-            monitorDetailList.parallelStream().forEach(detailEntity -> {
+            monitorDetailList.forEach(detailEntity -> {
                 ExamRecordDetailVo.MonitorVo.MonitorDetailVo monitorDetailVo = new ExamRecordDetailVo.MonitorVo.MonitorDetailVo();
                 BeanUtils.copyProperties(detailEntity, monitorDetailVo);
+                monitorDetailVo.setJudgmentEfficiency(setJudgmentEfficiency(monitorDetailVo, monitorVo));
                 detailVoList.add(monitorDetailVo);
             });
 
@@ -425,6 +435,33 @@ public class ExamRecordsServiceImpl implements ExamRecordsService {
                     .collect(Collectors.toList()));
 
             vo.setMonitorVo(monitorVo);
+        }
+    }
+
+    private String setJudgmentEfficiency(ExamRecordDetailVo.MonitorVo.MonitorDetailVo monitorDetailVo, ExamRecordDetailVo.MonitorVo monitorVo) {
+        if (!monitorDetailVo.getIsCorrect()) {
+            return "-";
+        }
+        String reactionTime = monitorDetailVo.getReactionTime().replace("s", "");
+        String rightRate;
+        switch (monitorDetailVo.getType()) {
+            case 1:
+                rightRate = monitorVo.getTurnbackRightRate().replace("%", "");
+                break;
+            case 2:
+                rightRate = monitorVo.getBoundsRightRate().replace("%", "");
+                break;
+            case 3:
+                rightRate = monitorVo.getCrashRightRate().replace("%", "");
+                break;
+            default:
+                throw new GlobalException(ResponseResult.error("暂不支持的数据类型"));
+        }
+        if (!StringUtils.hasText(reactionTime) || reactionTime.equals("0.00") || rightRate.equals("0.00")) {
+            return "0.00%";
+        } else {
+            return BigDecimal.valueOf(Double.valueOf(reactionTime))
+                    .divide(BigDecimal.valueOf(Double.valueOf(rightRate)), 2, RoundingMode.HALF_UP) + "%";
         }
     }
 

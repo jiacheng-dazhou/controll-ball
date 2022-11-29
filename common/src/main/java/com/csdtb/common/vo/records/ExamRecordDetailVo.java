@@ -176,6 +176,10 @@ public class ExamRecordDetailVo {
              * 判断效率
              */
             private String judgmentEfficiency;
+            /**
+             * 记录类型(1-折返,2-出界,3-碰壁,4-计算,5-脑电测试)
+             */
+            private Integer type;
         }
     }
 }

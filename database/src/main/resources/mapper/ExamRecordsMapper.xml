@@ -7,17 +7,18 @@
         <id column="id" property="id" />
         <result column="exam_id" property="examId" />
         <result column="user_id" property="userId" />
+        <result column="video_path" property="videoPath"/>
     </resultMap>
 
     <!-- 通用查询结果列 -->
     <sql id="Base_Column_List">
-        id, exam_id, user_id
+        id, exam_id, user_id, video_path
     </sql>
     <insert id="insertAndReturnId" useGeneratedKeys="true" keyProperty="id">
         insert into tb_exam_records
-        (`exam_id`,`user_id`)
+        (`exam_id`,`user_id`,`video_path`)
         values
-        (#{entity.examId},#{entity.userId})
+        (#{entity.examId},#{entity.userId},#{entity.videoPath})
     </insert>
 
     <select id="selectPageByCondition" resultType="com.csdtb.database.entity.ExamRecordPageEntity">

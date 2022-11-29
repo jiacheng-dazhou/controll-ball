@@ -34,7 +34,7 @@ public class AddExamDTO {
     /**
      * 考核时长（分钟表示）
      */
-    @NotBlank
+    @NotNull
     private Long examDuration;
 
     /**

@@ -8,7 +8,9 @@ import com.csdtb.common.dto.websocket.ExamNoticeResp;
 import com.csdtb.database.entity.ExamInfoEntity;
 import com.csdtb.database.entity.ExamRecordsDetailEntity;
 import com.csdtb.database.entity.ExamRecordsEntity;
-import com.csdtb.database.mapper.*;
+import com.csdtb.database.mapper.ExamInfoMapper;
+import com.csdtb.database.mapper.ExamRecordsDetailMapper;
+import com.csdtb.database.mapper.ExamRecordsMapper;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.BeanUtils;
 import org.springframework.context.ApplicationContext;
@@ -18,6 +20,8 @@ import org.springframework.stereotype.Component;
 import javax.websocket.*;
 import javax.websocket.server.PathParam;
 import javax.websocket.server.ServerEndpoint;
+import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -60,6 +64,14 @@ public class ExamWebSocket {
      * 考试记录id
      */
     private Integer examRecordsId;
+
+    /**
+     * 视频路径
+     */
+    private String videoPath;
+
+    private static final String filePath = "D:/test/userVideo/";
+
 
     public static void setApplicationContext(ApplicationContext applicationContext) {
         ExamWebSocket.applicationContext = applicationContext;
@@ -118,6 +130,19 @@ public class ExamWebSocket {
         examRecordsDetailMapper.insert(detailEntity);
     }
 
+    @OnMessage
+    public void onMessage(byte[] message,Session session){
+        try{
+            //把传来的字节流数组写入到上面创建的文件对象里去
+            saveFileFromBytes(message);
+            log.info("视频传输中:"+message.toString());
+            //只有客户端接受到ok才会传输下一段文件
+            session.getBasicRemote().sendText("服务端保存中...");
+        }catch (IOException e){
+            e.printStackTrace();
+        }
+    }
+
     @OnError
     public void onError(Throwable error) {
         error.printStackTrace();
@@ -133,11 +158,50 @@ public class ExamWebSocket {
         }
     }
 
+    public boolean saveFileFromBytes(byte[] b) {
+        //创建文件流对象
+        FileOutputStream fstream = null;
+        //从map中获取file对象
+        File file = new File(videoPath);
+        //判断路径是否存在，不存在就创建
+        if (!file.getParentFile().exists()) {
+            file.getParentFile().mkdirs();
+        }
+        try {
+            fstream = new FileOutputStream(file, true);
+            fstream.write(b);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return false;
+        } finally {
+            if (fstream != null) {
+                try {
+                    fstream.close();
+                } catch (IOException e1) {
+                    e1.printStackTrace();
+                }
+            }
+        }
+        return true;
+    }
+
     private void insertExamRecord(UserDTO user, ExamInfoEntity examInfoEntity) {
         //新增考核记录
         ExamRecordsEntity examRecordsEntity = new ExamRecordsEntity();
         examRecordsEntity.setUserId(Math.toIntExact(user.getId()));
         examRecordsEntity.setExamId(examInfoEntity.getId());
+
+        //视频存储路径
+        StringBuilder builder = new StringBuilder();
+        String path = builder.append(filePath)
+                .append(user.getId())
+                .append("/")
+                .append(examInfoEntity.getId())
+                .append("/")
+                .append(System.currentTimeMillis())
+                .append(".mp4")
+                .toString();
+        examRecordsEntity.setVideoPath(path);
 
         ExamRecordsEntity recordsEntity = examRecordsMapper.selectOne(new LambdaQueryWrapper<ExamRecordsEntity>()
                 .eq(ExamRecordsEntity::getUserId, user.getId())
@@ -147,6 +211,10 @@ public class ExamWebSocket {
         if (recordsEntity == null) {
             examRecordsMapper.insertAndReturnId(examRecordsEntity);
             this.examRecordsId = examRecordsEntity.getId();
+            this.videoPath = examRecordsEntity.getVideoPath();
+        }else{
+            this.examRecordsId = recordsEntity.getId();
+            this.videoPath = recordsEntity.getVideoPath();
         }
     }
 
