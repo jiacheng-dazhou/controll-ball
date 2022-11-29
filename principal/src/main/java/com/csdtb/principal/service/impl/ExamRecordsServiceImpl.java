@@ -181,12 +181,12 @@ public class ExamRecordsServiceImpl implements ExamRecordsService {
     @Override
     public void selectExamRecordVideo(Integer id, String token, HttpServletResponse response) throws Exception{
         //获取当前登录人信息
-        UserDTO user = (UserDTO) redisTemplate.opsForValue().get(token);
-        if (user == null || user.getRole().equals(UserEnum.CONTROLLER.getRole())) {
-            log.info("获取用户信息失败或当前用户无权限");
-            response.getWriter().write(JSON.toJSONString(ResponseResult.error("查看录像失败,获取用户信息失败或无权限")));
-            return;
-        }
+//        UserDTO user = (UserDTO) redisTemplate.opsForValue().get(token);
+//        if (user == null || user.getRole().equals(UserEnum.CONTROLLER.getRole())) {
+//            log.info("获取用户信息失败或当前用户无权限");
+//            response.getWriter().write(JSON.toJSONString(ResponseResult.error("查看录像失败,获取用户信息失败或无权限")));
+//            return;
+//        }
         //查询考核记录
         ExamRecordsEntity examRecordsEntity = examRecordsMapper.selectOne(new LambdaQueryWrapper<ExamRecordsEntity>()
                 .eq(ExamRecordsEntity::getId, id));
@@ -195,10 +195,12 @@ public class ExamRecordsServiceImpl implements ExamRecordsService {
             return;
         }
         File file = new File(examRecordsEntity.getVideoPath());
-        ServletOutputStream outputStream = response.getOutputStream();
-        outputStream.write(FileUtil.readBytes(file));
-        outputStream.flush();
-        outputStream.close();
+        if (file.exists()) {
+            ServletOutputStream outputStream = response.getOutputStream();
+            outputStream.write(FileUtil.readBytes(file));
+            outputStream.flush();
+            outputStream.close();
+        }
     }
 
     private void excelExport(ExamRecordDetailVo vo, HttpServletResponse response, String examName) {
@@ -376,7 +378,7 @@ public class ExamRecordsServiceImpl implements ExamRecordsService {
     }
 
     private String setJudgmentEfficiency(String reactionTime, long calculateRight) {
-        reactionTime = reactionTime.replace("s", "");
+        reactionTime = StringUtils.hasText(reactionTime)?reactionTime.replace("s", ""):"0.00";
 
         return BigDecimal.valueOf(Double.valueOf(reactionTime))
                 .divide(BigDecimal.valueOf(calculateRight), 2, RoundingMode.HALF_UP) + "%";

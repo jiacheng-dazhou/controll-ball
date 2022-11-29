@@ -15,7 +15,7 @@ import javax.annotation.Resource;
 public class LoginInterceptorConfig implements WebMvcConfigurer {
 
     private static String[] PATH_PATTERNS = {"/**"};
-    private static String[] EXCLUDE_PATTERNS = {"/user-login/toLogin"};
+    private static String[] EXCLUDE_PATTERNS = {"/user-login/toLogin","/exam-records/selectExamRecordVideo"};
 
     @Resource
     private LoginInterceptor loginInterceptor;
