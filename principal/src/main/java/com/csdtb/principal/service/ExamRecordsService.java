@@ -2,7 +2,6 @@ package com.csdtb.principal.service;
 
 import com.csdtb.common.ResponseResult;
 
-import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 /**
@@ -42,4 +41,12 @@ public interface ExamRecordsService {
      * @return
      */
     void exportRecordDetail(Integer id, String token, HttpServletResponse response);
+
+    /**
+     * 查看录像
+     * @param id
+     * @param token
+     * @param response
+     */
+    void selectExamRecordVideo(Integer id, String token, HttpServletResponse response) throws Exception;
 }

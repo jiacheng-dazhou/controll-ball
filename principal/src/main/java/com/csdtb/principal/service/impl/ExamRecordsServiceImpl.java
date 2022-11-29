@@ -1,6 +1,7 @@
 package com.csdtb.principal.service.impl;
 
 
+import cn.hutool.core.io.FileUtil;
 import cn.hutool.core.io.IoUtil;
 import cn.hutool.poi.excel.ExcelUtil;
 import cn.hutool.poi.excel.ExcelWriter;
@@ -36,6 +37,7 @@ import org.springframework.util.StringUtils;
 import javax.annotation.Resource;
 import javax.servlet.ServletOutputStream;
 import javax.servlet.http.HttpServletResponse;
+import java.io.File;
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
@@ -174,6 +176,29 @@ public class ExamRecordsServiceImpl implements ExamRecordsService {
         ExamRecordDetailVo examRecordDetailVo = result.getData();
         //组装导出数据
         excelExport(examRecordDetailVo, response, examEntity.getName());
+    }
+
+    @Override
+    public void selectExamRecordVideo(Integer id, String token, HttpServletResponse response) throws Exception{
+        //获取当前登录人信息
+        UserDTO user = (UserDTO) redisTemplate.opsForValue().get(token);
+        if (user == null || user.getRole().equals(UserEnum.CONTROLLER.getRole())) {
+            log.info("获取用户信息失败或当前用户无权限");
+            response.getWriter().write(JSON.toJSONString(ResponseResult.error("查看录像失败,获取用户信息失败或无权限")));
+            return;
+        }
+        //查询考核记录
+        ExamRecordsEntity examRecordsEntity = examRecordsMapper.selectOne(new LambdaQueryWrapper<ExamRecordsEntity>()
+                .eq(ExamRecordsEntity::getId, id));
+        if (examRecordsEntity == null) {
+            response.getWriter().write(JSON.toJSONString(ResponseResult.error("查看录像失败,获取考核记录为空")));
+            return;
+        }
+        File file = new File(examRecordsEntity.getVideoPath());
+        ServletOutputStream outputStream = response.getOutputStream();
+        outputStream.write(FileUtil.readBytes(file));
+        outputStream.flush();
+        outputStream.close();
     }
 
     private void excelExport(ExamRecordDetailVo vo, HttpServletResponse response, String examName) {

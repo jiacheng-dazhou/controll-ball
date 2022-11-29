@@ -52,4 +52,14 @@ public class ExamRecordsController {
         String token = request.getHeader("Authorization");
         examRecordsService.exportRecordDetail(id,token,response);
     }
+
+    @GetMapping("/selectExamRecordVideo")
+    public void selectExamRecordVideo(@RequestParam("id")Integer id,HttpServletRequest request,HttpServletResponse response){
+        String token = request.getHeader("Authorization");
+        try {
+            examRecordsService.selectExamRecordVideo(id,token,response);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
 }
