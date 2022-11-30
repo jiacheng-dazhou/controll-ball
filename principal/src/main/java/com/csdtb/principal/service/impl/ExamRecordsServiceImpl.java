@@ -195,12 +195,14 @@ public class ExamRecordsServiceImpl implements ExamRecordsService {
             return;
         }
         File file = new File(examRecordsEntity.getVideoPath());
-        if (file.exists()) {
-            ServletOutputStream outputStream = response.getOutputStream();
-            outputStream.write(FileUtil.readBytes(file));
-            outputStream.flush();
-            outputStream.close();
+        if (!file.exists()) {
+            response.getWriter().write(JSON.toJSONString(ResponseResult.error("查看录像失败,暂未获取到当前录像")));
+            return;
         }
+        ServletOutputStream outputStream = response.getOutputStream();
+        outputStream.write(FileUtil.readBytes(file));
+        outputStream.flush();
+        outputStream.close();
     }
 
     private void excelExport(ExamRecordDetailVo vo, HttpServletResponse response, String examName) {
@@ -392,77 +394,79 @@ public class ExamRecordsServiceImpl implements ExamRecordsService {
             monitorVo.setBoundsTotal(0);
             monitorVo.setCrashTotal(0);
             monitorVo.setTurnbackTotal(0);
-        } else {
-            Map<Integer, List<ExamRecordsDetailEntity>> detailListMap = detailEntityList.stream()
-                    .collect(Collectors.groupingBy(ExamRecordsDetailEntity::getType));
-            List<ExamRecordsDetailEntity> turnbackList = detailListMap.get(ExamInfoEnum.TURNBACK.getStatus());
-            List<ExamRecordsDetailEntity> boundsList = detailListMap.get(ExamInfoEnum.BOUNDS.getStatus());
-            List<ExamRecordsDetailEntity> crashList = detailListMap.get(ExamInfoEnum.CRASH.getStatus());
-
-            //监控统计
-            monitorVo.setCrashTotal(CollectionUtils.isEmpty(crashList) ? 0 : crashList.size());
-
-            if (CollectionUtils.isEmpty(turnbackList)) {
-                monitorVo.setTurnbackTotal(0);
-                monitorVo.setTurnbackRightRate("0.00%");
-            } else {
-                monitorVo.setTurnbackTotal(turnbackList.size());
-                long turnBackRight = turnbackList.stream()
-                        .filter(item -> item.getIsCorrect().equals(Boolean.TRUE))
-                        .count();
-                monitorVo.setTurnbackRightRate(CollectionUtils.isEmpty(turnbackList) ?
-                        "0.00%" : BigDecimal.valueOf(turnBackRight * 100 / turnbackList.size())
-                        .setScale(2, RoundingMode.HALF_UP) + "%");
-            }
-
-            if (CollectionUtils.isEmpty(boundsList)) {
-                monitorVo.setBoundsTotal(0);
-                monitorVo.setBoundsRightRate("0.00%");
-            } else {
-                monitorVo.setBoundsTotal(boundsList.size());
-                long boundsRight = boundsList.stream()
-                        .filter(item -> item.getIsCorrect().equals(Boolean.TRUE))
-                        .count();
-                monitorVo.setBoundsRightRate(CollectionUtils.isEmpty(boundsList) ?
-                        "0.00%" : BigDecimal.valueOf(boundsRight * 100 / boundsList.size())
-                        .setScale(2, RoundingMode.HALF_UP) + "%");
-            }
-
-            if (CollectionUtils.isEmpty(crashList)) {
-                monitorVo.setCrashTotal(0);
-                monitorVo.setCrashRightRate("0.00%");
-            } else {
-                monitorVo.setCrashTotal(crashList.size());
-                long crashRight = crashList.stream()
-                        .filter(item -> item.getIsCorrect().equals(Boolean.TRUE))
-                        .count();
-                monitorVo.setCrashRightRate(CollectionUtils.isEmpty(crashList) ?
-                        "0.00%" : BigDecimal.valueOf(crashRight * 100 / crashList.size())
-                        .setScale(2, RoundingMode.HALF_UP) + "%");
-            }
-
-            //管制员不看详情
-            if (user.getRole().equals(UserEnum.CONTROLLER.getRole())) {
-                vo.setMonitorVo(monitorVo);
-                return;
-            }
-
-            List<ExamRecordsDetailEntity> monitorDetailList = detailEntityList.stream().filter(item -> !item.getType().equals(ExamInfoEnum.CALCULATE.getStatus())).collect(Collectors.toList());
-            List<ExamRecordDetailVo.MonitorVo.MonitorDetailVo> detailVoList = new ArrayList<>(monitorDetailList.size());
-            monitorDetailList.forEach(detailEntity -> {
-                ExamRecordDetailVo.MonitorVo.MonitorDetailVo monitorDetailVo = new ExamRecordDetailVo.MonitorVo.MonitorDetailVo();
-                BeanUtils.copyProperties(detailEntity, monitorDetailVo);
-                monitorDetailVo.setJudgmentEfficiency(setJudgmentEfficiency(monitorDetailVo, monitorVo));
-                detailVoList.add(monitorDetailVo);
-            });
-
-            //排序
-            monitorVo.setMonitorDetailVoList(detailVoList.stream()
-                    .sorted(Comparator.comparing(ExamRecordDetailVo.MonitorVo.MonitorDetailVo::getStartTime))
-                    .collect(Collectors.toList()));
-
             vo.setMonitorVo(monitorVo);
+            return;
         }
+        Map<Integer, List<ExamRecordsDetailEntity>> detailListMap = detailEntityList.stream()
+                .collect(Collectors.groupingBy(ExamRecordsDetailEntity::getType));
+        List<ExamRecordsDetailEntity> turnbackList = detailListMap.get(ExamInfoEnum.TURNBACK.getStatus());
+        List<ExamRecordsDetailEntity> boundsList = detailListMap.get(ExamInfoEnum.BOUNDS.getStatus());
+        List<ExamRecordsDetailEntity> crashList = detailListMap.get(ExamInfoEnum.CRASH.getStatus());
+
+        //监控统计
+        monitorVo.setCrashTotal(CollectionUtils.isEmpty(crashList) ? 0 : crashList.size());
+
+        if (CollectionUtils.isEmpty(turnbackList)) {
+            monitorVo.setTurnbackTotal(0);
+            monitorVo.setTurnbackRightRate("0.00%");
+        } else {
+            monitorVo.setTurnbackTotal(turnbackList.size());
+            long turnBackRight = turnbackList.stream()
+                    .filter(item -> item.getIsCorrect().equals(Boolean.TRUE))
+                    .count();
+            monitorVo.setTurnbackRightRate(CollectionUtils.isEmpty(turnbackList) ?
+                    "0.00%" : BigDecimal.valueOf(turnBackRight * 100 / turnbackList.size())
+                    .setScale(2, RoundingMode.HALF_UP) + "%");
+        }
+
+        if (CollectionUtils.isEmpty(boundsList)) {
+            monitorVo.setBoundsTotal(0);
+            monitorVo.setBoundsRightRate("0.00%");
+        } else {
+            monitorVo.setBoundsTotal(boundsList.size());
+            long boundsRight = boundsList.stream()
+                    .filter(item -> item.getIsCorrect().equals(Boolean.TRUE))
+                    .count();
+            monitorVo.setBoundsRightRate(CollectionUtils.isEmpty(boundsList) ?
+                    "0.00%" : BigDecimal.valueOf(boundsRight * 100 / boundsList.size())
+                    .setScale(2, RoundingMode.HALF_UP) + "%");
+        }
+
+        if (CollectionUtils.isEmpty(crashList)) {
+            monitorVo.setCrashTotal(0);
+            monitorVo.setCrashRightRate("0.00%");
+        } else {
+            monitorVo.setCrashTotal(crashList.size());
+            long crashRight = crashList.stream()
+                    .filter(item -> item.getIsCorrect().equals(Boolean.TRUE))
+                    .count();
+            monitorVo.setCrashRightRate(CollectionUtils.isEmpty(crashList) ?
+                    "0.00%" : BigDecimal.valueOf(crashRight * 100 / crashList.size())
+                    .setScale(2, RoundingMode.HALF_UP) + "%");
+        }
+
+        //管制员不看详情
+        if (user.getRole().equals(UserEnum.CONTROLLER.getRole())) {
+            vo.setMonitorVo(monitorVo);
+            return;
+        }
+
+        List<ExamRecordsDetailEntity> monitorDetailList = detailEntityList.stream().filter(item -> !item.getType().equals(ExamInfoEnum.CALCULATE.getStatus())).collect(Collectors.toList());
+        List<ExamRecordDetailVo.MonitorVo.MonitorDetailVo> detailVoList = new ArrayList<>(monitorDetailList.size());
+        monitorDetailList.forEach(detailEntity -> {
+            ExamRecordDetailVo.MonitorVo.MonitorDetailVo monitorDetailVo = new ExamRecordDetailVo.MonitorVo.MonitorDetailVo();
+            BeanUtils.copyProperties(detailEntity, monitorDetailVo);
+            monitorDetailVo.setJudgmentEfficiency(setJudgmentEfficiency(monitorDetailVo, monitorVo));
+            detailVoList.add(monitorDetailVo);
+        });
+
+        //排序
+        monitorVo.setMonitorDetailVoList(detailVoList.stream()
+                .sorted(Comparator.comparing(ExamRecordDetailVo.MonitorVo.MonitorDetailVo::getStartTime))
+                .collect(Collectors.toList()));
+
+        vo.setMonitorVo(monitorVo);
+
     }
 
     private String setJudgmentEfficiency(ExamRecordDetailVo.MonitorVo.MonitorDetailVo monitorDetailVo, ExamRecordDetailVo.MonitorVo monitorVo) {

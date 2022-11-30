@@ -10,6 +10,7 @@ import com.csdtb.database.mapper.ExamInfoMapper;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.ApplicationArguments;
 import org.springframework.boot.ApplicationRunner;
+import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.CollectionUtils;
 
@@ -27,7 +28,7 @@ import java.util.stream.Collectors;
  * @Author zhoujiacheng
  * @Date 2022-11-17
  **/
-//@Component
+@Component
 @Slf4j
 public class MonitorExamStatusTask implements ApplicationRunner {
 
