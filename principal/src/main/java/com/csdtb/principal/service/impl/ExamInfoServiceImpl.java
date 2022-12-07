@@ -1,11 +1,14 @@
 package com.csdtb.principal.service.impl;
 
+import com.alibaba.fastjson.JSON;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.csdtb.common.ResponseResult;
 import com.csdtb.common.constant.ExamInfoEnum;
 import com.csdtb.common.dto.exam.AddExamDTO;
 import com.csdtb.common.dto.exam.UpdateExamDTO;
+import com.csdtb.common.dto.websocket.ExamineData;
 import com.csdtb.common.vo.PageData;
 import com.csdtb.common.vo.exam.ExamDetailVo;
 import com.csdtb.common.vo.exam.ExamGuidelinesVo;
@@ -18,7 +21,9 @@ import com.csdtb.database.mapper.ExamInfoMapper;
 import com.csdtb.database.mapper.PrepareStageMapper;
 import com.csdtb.principal.exception.GlobalException;
 import com.csdtb.principal.service.ExamInfoService;
+import com.csdtb.principal.websocket.ExamWebSocket;
 import org.springframework.beans.BeanUtils;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.util.CollectionUtils;
 import org.springframework.util.StringUtils;
@@ -26,6 +31,7 @@ import org.springframework.util.StringUtils;
 import javax.annotation.Resource;
 import java.time.Duration;
 import java.time.LocalDateTime;
+import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -41,7 +47,7 @@ import java.util.stream.Collectors;
  * @since 2022-11-17
  */
 @Service
-public class ExamInfoServiceImpl implements ExamInfoService {
+public class ExamInfoServiceImpl extends ServiceImpl<ExamInfoMapper,ExamInfoEntity> implements ExamInfoService {
 
     @Resource
     private ExamInfoMapper examInfoMapper;
@@ -51,6 +57,9 @@ public class ExamInfoServiceImpl implements ExamInfoService {
 
     @Resource
     private BallMonitorTaskMapper ballMonitorTaskMapper;
+
+    @Autowired
+    private ExamWebSocket examWebSocket;
 
     @Override
     public ResponseResult addExam(AddExamDTO dto) {
@@ -207,6 +216,25 @@ public class ExamInfoServiceImpl implements ExamInfoService {
         return ResponseResult.success(vo);
     }
 
+    @Override
+    public void getExamData(ExamInfoEntity examInfo) {
+        LocalDateTime now = LocalDateTime.now();
+        LocalDateTime startTime = LocalDateTime.parse(examInfo.getStartTime(), DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
+        LocalDateTime endTime = LocalDateTime.parse(examInfo.getEndTime(), DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
+        //总的考试时长
+        long allExamTime = endTime.toEpochSecond(ZoneOffset.ofHours(8)) - startTime.toEpochSecond(ZoneOffset.ofHours(8));
+
+        if (now.compareTo(startTime) >= 0){//达到考试开始时间，开始推送数据
+
+        }else {
+            ExamineData examineData = new ExamineData();
+            examineData.setExamineTime(allExamTime);
+            examineData.setMessage("考试还未开始，请稍等...");
+            String s = JSON.toJSONString(examineData);
+            examWebSocket.sendInfo(s);
+        }
+    }
+
     private List<ExamPageVo> backVo(List<ExamInfoEntity> entityList) {
         List<ExamPageVo> voList = new ArrayList<>(entityList.size());
         entityList.parallelStream().forEach(entity->{
@@ -217,5 +245,13 @@ public class ExamInfoServiceImpl implements ExamInfoService {
         return voList.stream()
                 .sorted(Comparator.comparing(ExamPageVo::getStartTime).reversed())
                 .collect(Collectors.toList());
+    }
+
+    public static void main(String[] args) {
+        LocalDateTime now = LocalDateTime.now();
+        LocalDateTime last = LocalDateTime.now();
+        if (now.compareTo(last) >= 0){
+            System.out.println(123);
+        }
     }
 }

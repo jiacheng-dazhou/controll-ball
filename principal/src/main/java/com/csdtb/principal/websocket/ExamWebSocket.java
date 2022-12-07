@@ -38,7 +38,7 @@ public class ExamWebSocket {
     /**
      * 存放所有考试用户信息
      */
-    public static Map<String, ExamWebSocket> conns = new ConcurrentHashMap<>();
+    public static ConcurrentHashMap<String, ExamWebSocket> conns = new ConcurrentHashMap<>();
 
     private static ApplicationContext applicationContext;
 
@@ -72,6 +72,9 @@ public class ExamWebSocket {
 
     private static final String filePath = "D:/test/userVideo/";
 
+    /**与某个客户端的连接会话，需要通过它来给客户端发送数据*/
+    private Session session;
+
 
     public static void setApplicationContext(ApplicationContext applicationContext) {
         ExamWebSocket.applicationContext = applicationContext;
@@ -80,7 +83,7 @@ public class ExamWebSocket {
     @OnOpen
     public void onOpen(Session session, @PathParam("token") String token, @PathParam("examId") Integer examId) {
         init();
-
+        this.session = session;
         //获取用户信息
         UserDTO user = (UserDTO) redisTemplate.opsForValue().get(token);
 
@@ -141,6 +144,29 @@ public class ExamWebSocket {
         }catch (IOException e){
             e.printStackTrace();
         }
+    }
+
+    /**
+     * 实现服务
+     * 器主动推送
+     */
+    public void sendMessage(String message) {
+        try {
+            this.session.getBasicRemote().sendText(message);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    public void sendInfo(String message) {
+        conns.forEach((s, webSocketServer) -> {
+            conns.get(s).sendMessage(message);
+        });
+//        if(StringUtils.isNotBlank(userId) && webSocketMap.containsKey(userId)){
+//            webSocketMap.get(userId).sendMessage(message);
+//        }else{
+//            log.error("用户"+userId+",不在线！");
+//        }
     }
 
     @OnError
@@ -235,5 +261,9 @@ public class ExamWebSocket {
             ExamRecordsDetailMapper examRecordsDetailMapper = applicationContext.getBean("examRecordsDetailMapper", ExamRecordsDetailMapper.class);
             ExamWebSocket.examRecordsDetailMapper = examRecordsDetailMapper;
         }
+    }
+
+    public ConcurrentHashMap getExamWebSocket(){
+        return conns;
     }
 }

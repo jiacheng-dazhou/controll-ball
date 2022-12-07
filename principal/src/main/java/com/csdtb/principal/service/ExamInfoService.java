@@ -1,8 +1,10 @@
 package com.csdtb.principal.service;
 
+import com.baomidou.mybatisplus.extension.service.IService;
 import com.csdtb.common.ResponseResult;
 import com.csdtb.common.dto.exam.AddExamDTO;
 import com.csdtb.common.dto.exam.UpdateExamDTO;
+import com.csdtb.database.entity.ExamInfoEntity;
 
 /**
  * <p>
@@ -12,7 +14,7 @@ import com.csdtb.common.dto.exam.UpdateExamDTO;
  * @author zhoujiacheng
  * @since 2022-11-17
  */
-public interface ExamInfoService {
+public interface ExamInfoService extends IService<ExamInfoEntity> {
 
     /**
      * 新增考核
@@ -57,4 +59,6 @@ public interface ExamInfoService {
      * @return
      */
     ResponseResult selectExamDetail(String id);
+
+    void getExamData(ExamInfoEntity value);
 }
