@@ -1,7 +1,6 @@
 package com.csdtb.principal.interceptor;
 
-import cn.hutool.json.JSONUtil;
-import com.alibaba.fastjson.JSON;
+import com.csdtb.common.LoginUserHolder;
 import com.csdtb.common.constant.ResponseType;
 import com.csdtb.common.dto.user.UserDTO;
 import org.springframework.data.redis.core.RedisTemplate;
@@ -44,7 +43,13 @@ public class LoginInterceptor implements HandlerInterceptor {
             setResp(response);
             return false;
         }
+        LoginUserHolder.putUser(user);
         return true;
+    }
+
+    @Override
+    public void afterCompletion(HttpServletRequest request, HttpServletResponse response, Object handler, Exception ex) throws Exception {
+        LoginUserHolder.removeUser();
     }
 
     private void setResp(HttpServletResponse response) {

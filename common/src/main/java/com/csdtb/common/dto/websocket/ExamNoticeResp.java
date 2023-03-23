@@ -11,42 +11,25 @@ import lombok.Data;
 public class ExamNoticeResp {
 
     /**
-     * 类型(1-折返,2-出界,3-碰壁,4-计算,5-脑电测试)
+     * 类型(1-折返,2-出界,3-碰壁,4-计算,5-脑电,6-控制小球)
      */
     private Integer type;
-
-    /**
-     * 名称
-     */
-    private String name;
-
-    /**
-     * 出现时间
-     */
-    private String startTime;
-
-    /**
-     * 正确与否
-     */
-    private Boolean isCorrect;
-
-    /**
-     * 是否提前反应(1-折返,2-出界,3-碰壁)
-     */
-    private Boolean isReactInAdvance;
-
-    /**
-     * 判断反应时间(秒）
-     */
-    private String reactionTime;
-
-    /**
-     * 判断效率
-     */
-    private String judgmentEfficiency;
 
     /**
      * 答案(4-计算)
      */
     private String answer;
+
+    /**
+     * id(6-控制小球)
+     */
+    private Integer id;
+    /**
+     * 方向(6-控制小球)
+     */
+    private Integer direction;
+    /**
+     * 速度(6-控制小球)
+     */
+    private Integer speed;
 }

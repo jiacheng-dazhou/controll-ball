@@ -19,7 +19,8 @@ public enum ExamInfoEnum {
     TURNBACK(1,"折返"),
     BOUNDS(2,"出界"),
     CRASH(3,"碰撞"),
-    CALCULATE(4,"计算");
+    CALCULATE(4,"计算"),
+    CONTROL_BALL(6,"控制小球");
 
     private Integer status;
     private String description;

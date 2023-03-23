@@ -27,9 +27,9 @@ import java.util.Scanner;
 public class GeneratorMybatisPlus {
 
     private static String DRIVER_CLASS_NAME = "com.mysql.cj.jdbc.Driver";
-    private static String URL = "jdbc:mysql://192.168.110.128:3306/control-simulation-dual-task-back?useUnicode=true&characterEncoding=utf-8&useSSL=false&allowMultiQueries=true";
+    private static String URL = "jdbc:mysql://localhost:3306/ball?useUnicode=true&characterEncoding=utf-8&useSSL=false&allowMultiQueries=true";
     private static String USERNAME = "root";
-    private static String PASSWORD = "Sdbc1234@1";
+    private static String PASSWORD = "root";
 
     /**
      * 父包名路径(文件输出路径,也是导包的路径)

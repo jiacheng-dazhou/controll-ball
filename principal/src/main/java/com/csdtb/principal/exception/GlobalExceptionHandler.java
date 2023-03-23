@@ -21,7 +21,7 @@ public class GlobalExceptionHandler {
             BindException exception = (BindException) e;
             return ResponseResult.error("参数校验异常:" + exception.getBindingResult().getAllErrors().get(0).getDefaultMessage());
         }
-
+        e.printStackTrace();
         return ResponseResult.error("系统异常");
     }
 }
