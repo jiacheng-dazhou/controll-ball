@@ -5,6 +5,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.cglib.proxy.Enhancer;
 import org.springframework.cglib.proxy.MethodInterceptor;
 import org.springframework.cglib.proxy.MethodProxy;
+import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 
 import javax.annotation.Resource;
 import java.lang.reflect.Method;
@@ -42,5 +43,41 @@ public class SpringStudy {
     @Test
     void jdkDynamicProxy() throws Exception{
         jdkDynamicProxyTarget.show();
+    }
+
+    @Resource
+    private ThreadPoolTaskExecutor taskExecutor;
+
+    @Test
+    public void testPrintf(){
+        A a = new A();
+        Thread threadA = new Thread(a, "A");
+        Thread threadB = new Thread(a, "B");
+        threadA.start();
+        threadB.start();
+    }
+
+    class A implements Runnable{
+        private int i = 0;
+
+        @Override
+        public void run() {
+            while (true){
+                synchronized (this) {
+                    notify();
+                    if(i < 100){
+                        i++;
+                        System.out.println(Thread.currentThread().getName()+"---"+i);
+                    }else{
+                        break;
+                    }
+                    try {
+                        wait();
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
+                }
+            }
+        }
     }
 }
